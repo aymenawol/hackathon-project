@@ -7,7 +7,7 @@ export default function Home() {
 
   return (
     <main className="mx-auto flex min-h-screen w-full max-w-3xl flex-col items-start justify-center gap-6 px-6 py-16">
-      <h1 className="text-3xl font-semibold tracking-tight">Hackathon app is ready 🚀</h1>
+      <h1 className="text-3xl font-semibold tracking-tight">Hackathon app is ready and aymen is sexy 🚀</h1>
       <p className="text-muted-foreground">
         Next.js + Tailwind + shadcn/ui + Supabase baseline is set up.
       </p>
