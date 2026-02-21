@@ -66,16 +66,15 @@ function CustomerPageContent() {
     const risk = bacRiskLevel(bac);
     if (risk === 'danger' && !highRiskSentRef.current) {
       highRiskSentRef.current = true;
-      fetch('/api/sms', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          to: customer.emergency_phone || 'friend',
-          type: 'high-risk',
-          customerName: customer.name,
-          bac: `${bac.toFixed(3)}%`,
-        }),
-      }).catch((err) => console.error('High-risk SMS failed:', err));
+      const firstName = customer.name.split(' ')[0];
+      supabase.from('sms_messages').insert({
+        phone_number: customer.emergency_phone || 'friend',
+        message: `⚠️ SOBR Alert: Your friend ${firstName} has reached a high estimated BAC (${bac.toFixed(3)}%). They may need your help getting home safely tonight. Please check in on them.`,
+        type: 'high-risk',
+        customer_name: customer.name,
+      }).then(({ error }) => {
+        if (error) console.error('High-risk SMS insert failed:', error);
+      });
     }
   }, [bac, customer, session]);
 
@@ -395,17 +394,18 @@ function CustomerPageContent() {
   // ---- Send safety SMS to trusted friend ----
   async function sendFriendSMS(type: 'high-risk' | 'session-ended', currentBac?: number) {
     if (!customer) return;
+    const firstName = customer.name.split(' ')[0];
+    const message = type === 'high-risk'
+      ? `⚠️ SOBR Alert: Your friend ${firstName} has reached a high estimated BAC${currentBac !== undefined ? ` (${currentBac.toFixed(3)}%)` : ''}. They may need your help getting home safely tonight. Please check in on them.`
+      : `🍻 SOBR: Your friend ${firstName} just ended their drinking session. Please make sure they get home safely — a quick call or text goes a long way!`;
     try {
-      await fetch('/api/sms', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          to: customer.emergency_phone || 'friend',
-          type,
-          customerName: customer.name,
-          bac: currentBac !== undefined ? `${currentBac.toFixed(3)}%` : undefined,
-        }),
+      const { error } = await supabase.from('sms_messages').insert({
+        phone_number: customer.emergency_phone || 'friend',
+        message,
+        type,
+        customer_name: customer.name,
       });
+      if (error) console.error('Failed to insert friend SMS:', error);
     } catch (err) {
       console.error('Failed to send friend SMS:', err);
     }
