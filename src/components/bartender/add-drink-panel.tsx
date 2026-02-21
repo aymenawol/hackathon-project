@@ -24,7 +24,7 @@ export function AddDrinkPanel({ sessionId }: AddDrinkPanelProps) {
         abv: drink.abv,
         ordered_at: new Date().toISOString(),
       });
-      if (error) console.error("Failed to add drink:", error);
+      if (error) console.error("Failed to add drink:", JSON.stringify(error, null, 2), error.message, error.code);
     } finally {
       setAdding(null);
     }
