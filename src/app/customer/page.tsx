@@ -1,4 +1,4 @@
-'use client';
+ "use client";
 
 import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
@@ -29,6 +29,7 @@ export default function CustomerPage() {
   const [weightLbs, setWeightLbs] = useState(150);
   const [gender, setGender] = useState<'male' | 'female'>('male');
   const [userId, setUserId] = useState<string | null>(null);
+  const [showScanner, setShowScanner] = useState(false);
 
   // ---- Session state ----
   const [customer, setCustomer] = useState<Customer | null>(null);
@@ -80,6 +81,106 @@ export default function CustomerPage() {
       }
     })();
   }, [router]);
+
+  // ---- Join session via QR code scan ----
+  async function joinSessionViaQR(sessionId: string) {
+    setShowScanner(false);
+    setLoading(true);
+    try {
+      console.log('Attempting to join session via QR:', sessionId);
+      
+      // 1. Save current customer info
+      if (!userId) {
+        alert('User not authenticated');
+        return;
+      }
+
+      const { data: cust, error: cErr } = await supabase
+        .from('customers')
+        .update({ 
+          name: customerName.trim(), 
+          weight_lbs: weightLbs, 
+          gender 
+        })
+        .eq('auth_user_id', userId)
+        .select()
+        .single();
+      
+      if (cErr) { 
+        console.error('Customer save error:', cErr);
+        alert(`Error saving customer: ${cErr.message}`);
+        return;
+      }
+
+      // 2. Subscribe to the session
+      const { data: sess, error: sErr } = await supabase
+        .from('sessions')
+        .select('*')
+        .eq('id', sessionId)
+        .single();
+      
+      if (sErr) { 
+        console.error('Session fetch error:', sErr);
+        alert(`Error joining session: ${sErr.message}`);
+        return;
+      }
+      if (!sess) { 
+        alert('Session not found');
+        return;
+      }
+
+      console.log('Joined session:', sess);
+      setCustomer(cust as Customer);
+      setSession(sess as Session);
+      setDrinks([]);
+    } catch (err) {
+      console.error('Unexpected error:', err);
+      alert(`Unexpected error: ${err instanceof Error ? err.message : String(err)}`);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  // mount scanner when requested
+  useEffect(() => {
+    if (!showScanner) return;
+
+    let scanner: any = null;
+    let mounted = true;
+
+    (async () => {
+      try {
+        const mod = await import('html5-qrcode');
+        const Html5QrcodeScanner = mod.Html5QrcodeScanner || mod.Html5Qrcode || mod.default?.Html5QrcodeScanner;
+        if (!Html5QrcodeScanner) throw new Error('Html5QrcodeScanner not found in html5-qrcode module');
+
+        // instantiate scanner
+        // @ts-ignore
+        scanner = new Html5QrcodeScanner('qr-reader', { fps: 10, qrbox: 250, rememberLastUsedCamera: true }, false);
+        scanner.render(
+          (decodedText: string) => {
+            if (!mounted) return;
+            console.log('QR decoded:', decodedText);
+            joinSessionViaQR(decodedText);
+            try { scanner.clear(); } catch (e) { /* ignore */ }
+            setShowScanner(false);
+          },
+          (error: any) => {
+            console.log('QR scan error', error);
+          }
+        );
+      } catch (err) {
+        console.error('Failed to start scanner:', err);
+        alert('Unable to access camera for QR scanning.');
+        setShowScanner(false);
+      }
+    })();
+
+    return () => {
+      mounted = false;
+      try { if (scanner) scanner.clear(); } catch (e) { /* ignore */ }
+    };
+  }, [showScanner]);
 
   // ---- Start session: creates or updates customer + session in Supabase ----
   async function startSession() {
@@ -252,6 +353,18 @@ export default function CustomerPage() {
   // ============================================================
   if (!session) {
     return (
+      <>
+        {showScanner && (
+          <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-black/75 p-4">
+            <div className="w-full max-w-md bg-white rounded-2xl p-4 shadow-lg">
+              <h3 className="text-lg font-semibold mb-2">Scan QR Code</h3>
+              <div id="qr-reader" className="w-full h-[360px]" />
+              <div className="mt-4 flex gap-2">
+                <Button onClick={() => { setShowScanner(false); }} className="flex-1">Cancel</Button>
+              </div>
+            </div>
+          </div>
+        )}
       <main className="flex min-h-[100dvh] w-full flex-col items-center justify-center bg-background px-6">
         <div className="w-full max-w-md space-y-8 text-center">
           <div className="space-y-2">
@@ -307,17 +420,18 @@ export default function CustomerPage() {
               </div>
 
               <Button
-                onClick={startSession}
+                onClick={() => setShowScanner(true)}
                 size="lg"
                 className="w-full rounded-full text-base h-14 mt-2"
                 disabled={!customerName.trim() || loading}
               >
-                {loading ? 'Starting…' : 'Start Session'}
+                {loading ? 'Starting…' : 'Scan QR to Join'}
               </Button>
             </CardContent>
           </Card>
         </div>
       </main>
+      </>
     );
   }
 

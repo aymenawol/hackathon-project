@@ -10,6 +10,15 @@ import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { AddDrinkPanel } from "@/components/bartender/add-drink-panel";
 import { cn } from "@/lib/utils";
+import dynamic from 'next/dynamic';
+const QRCode = dynamic(
+  () => import('qrcode.react').then((mod) => {
+    const Comp = mod?.QRCodeSVG ?? mod?.QRCodeCanvas ?? (() => null);
+    return { default: Comp } as any;
+  }),
+  { ssr: false }
+);
+
 
 interface SessionDetailProps {
   session: ActiveSession;
@@ -42,8 +51,8 @@ export function SessionDetail({ session, onEndSession }: SessionDetailProps) {
   const bacPercent = Math.min((bac / 0.15) * 100, 100);
 
   return (
-    <div className="flex flex-1 flex-col gap-4 overflow-hidden p-6">
-      {/* Header */}
+    <div className="relative flex flex-1 flex-col gap-4 overflow-hidden p-6">
+      {/* Header with QR Code */}
       <div className="flex items-start justify-between">
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">
@@ -54,13 +63,15 @@ export function SessionDetail({ session, onEndSession }: SessionDetailProps) {
             {customer.weight_lbs} lbs · {customer.gender}
           </p>
         </div>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => onEndSession(session.id)}
-        >
-          End Session
-        </Button>
+        <div className="flex flex-col items-end gap-3">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => onEndSession(session.id)}
+          >
+            End Session
+          </Button>
+        </div>
       </div>
 
       {/* Stats Row */}
@@ -195,6 +206,13 @@ export function SessionDetail({ session, onEndSession }: SessionDetailProps) {
           </div>
         </ScrollArea>
       </div>
+      {/* Floating QR code at bottom-left of viewport */}
+      <div className="fixed left-4 bottom-6 z-50">
+        <Card className="p-2 border-2 shadow-lg">
+          <QRCode value={session.id} size={110} level="H" includeMargin={false} />
+        </Card>
+      </div>
     </div>
   );
 }
+
