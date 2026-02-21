@@ -62,7 +62,7 @@ function CustomerPageContent() {
 
   // ---- Send high-risk SMS when BAC enters danger zone ----
   useEffect(() => {
-    if (bac < 0.08 || highRiskSentRef.current) return;
+    if (bac < 0.04 || highRiskSentRef.current) return;
     highRiskSentRef.current = true;
     const name = customer?.name || 'Your friend';
     const firstName = name.split(' ')[0];
@@ -201,6 +201,18 @@ function CustomerPageContent() {
       setCustomer(cust as Customer);
       setSession(sess as Session);
       setDrinks([]);
+
+      // Notify trusted friend that a session started
+      const firstName = (cust as Customer).name?.split(' ')[0] || 'Your friend';
+      supabase.from('sms_messages').insert({
+        phone_number: 'friend',
+        message: `📍 SOBR: ${firstName} just checked in at a bar and started a drinking session. We'll keep you updated on how they're doing tonight.`,
+        type: 'high-risk',
+        customer_name: (cust as Customer).name || 'Your friend',
+      }).select().then(({ error }) => {
+        if (error) console.error('[SOBR] session-start insert FAILED:', error);
+        else console.log('[SOBR] session-start insert OK');
+      });
     } catch (err) {
       console.error('Unexpected error:', err);
       alert(`Unexpected error: ${err instanceof Error ? err.message : String(err)}`);
