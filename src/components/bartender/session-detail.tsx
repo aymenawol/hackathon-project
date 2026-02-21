@@ -29,7 +29,7 @@ function formatCurrency(cents: number) {
 
 export function SessionDetail({ session, onEndSession }: SessionDetailProps) {
   const { customer, drinks } = session;
-  const bac = estimateBAC(drinks, customer.weight_kg, customer.gender);
+  const bac = estimateBAC(drinks, customer.weight_lbs, customer.gender);
   const risk = bacRiskLevel(bac);
 
   // Sort drinks newest first
@@ -51,7 +51,7 @@ export function SessionDetail({ session, onEndSession }: SessionDetailProps) {
           </h1>
           <p className="text-sm text-muted-foreground">
             Session started {formatTime(session.started_at)} ·{" "}
-            {customer.weight_kg}kg · {customer.gender}
+            {customer.weight_lbs} lbs · {customer.gender}
           </p>
         </div>
         <Button

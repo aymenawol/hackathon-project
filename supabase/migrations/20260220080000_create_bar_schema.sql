@@ -7,7 +7,7 @@
 create table if not exists public.customers (
   id uuid default gen_random_uuid() primary key,
   name text not null,
-  weight_kg numeric(5,1) not null default 70.0,
+  weight_lbs numeric(5,1) not null default 150.0,
   gender text not null default 'male' check (gender in ('male', 'female')),
   created_at timestamptz not null default now()
 );

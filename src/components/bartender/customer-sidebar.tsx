@@ -40,7 +40,7 @@ export function CustomerSidebar({
           {sessions.map((session) => {
             const bac = estimateBAC(
               session.drinks,
-              session.customer.weight_kg,
+              session.customer.weight_lbs,
               session.customer.gender
             );
             const risk = bacRiskLevel(bac);

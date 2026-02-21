@@ -6,7 +6,7 @@
 export interface Customer {
   id: string;
   name: string;
-  weight_kg: number;
+  weight_lbs: number;
   gender: "male" | "female";
   created_at: string;
 }

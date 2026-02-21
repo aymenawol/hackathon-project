@@ -23,7 +23,7 @@ function getRiskDisplay(bac: number) {
 export default function CustomerPage() {
   // ---- Onboarding state ----
   const [customerName, setCustomerName] = useState('');
-  const [weightKg, setWeightKg] = useState(70);
+  const [weightLbs, setWeightLbs] = useState(150);
   const [gender, setGender] = useState<'male' | 'female'>('male');
 
   // ---- Session state ----
@@ -35,7 +35,7 @@ export default function CustomerPage() {
 
   // ---- Derived ----
   const bac = customer && drinks.length > 0
-    ? estimateBAC(drinks, customer.weight_kg, customer.gender)
+    ? estimateBAC(drinks, customer.weight_lbs, customer.gender)
     : 0;
   const riskInfo = getRiskDisplay(bac);
   const bacPercent = Math.min((bac / 0.15) * 100, 100);
@@ -51,7 +51,7 @@ export default function CustomerPage() {
       // 1. Create customer
       const { data: cust, error: cErr } = await supabase
         .from('customers')
-        .insert({ name: customerName.trim(), weight_kg: weightKg, gender })
+        .insert({ name: customerName.trim(), weight_lbs: weightLbs, gender })
         .select()
         .single();
       if (cErr || !cust) { console.error('Customer create failed', cErr); return; }
@@ -159,13 +159,13 @@ export default function CustomerPage() {
               </div>
               {/* Weight */}
               <div className="space-y-1.5">
-                <label className="text-sm font-medium">Weight (kg)</label>
+                <label className="text-sm font-medium">Weight (lbs)</label>
                 <input
                   type="number"
-                  value={weightKg}
-                  onChange={(e) => setWeightKg(Number(e.target.value))}
-                  min={30}
-                  max={300}
+                  value={weightLbs}
+                  onChange={(e) => setWeightLbs(Number(e.target.value))}
+                  min={60}
+                  max={600}
                   className="w-full rounded-lg border bg-background px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-primary/50"
                 />
               </div>
@@ -336,7 +336,7 @@ export default function CustomerPage() {
                 </div>
                 <div className="flex items-center justify-between p-4">
                   <span className="font-medium">Body Weight</span>
-                  <span className="text-muted-foreground">{customer?.weight_kg} kg</span>
+                  <span className="text-muted-foreground">{customer?.weight_lbs} lbs</span>
                 </div>
                 <div className="flex items-center justify-between p-4">
                   <span className="font-medium">Gender</span>

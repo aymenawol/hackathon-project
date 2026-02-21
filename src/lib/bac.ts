@@ -35,14 +35,16 @@ export function alcoholGrams(drink: Drink): number {
  * BAC = (totalAlcoholGrams / (bodyWeightGrams * widmarkFactor)) * 100
  *       - metabolismRate * hoursSinceFirstDrink
  *
+ * weightLbs is converted to kg internally (÷ 2.205).
+ *
  * Returns a value ≥ 0.
  */
 export function estimateBAC(
   drinks: Drink[],
-  weightKg: number,
+  weightLbs: number,
   gender: "male" | "female"
 ): number {
-  if (drinks.length === 0 || weightKg <= 0) return 0;
+  if (drinks.length === 0 || weightLbs <= 0) return 0;
 
   const totalGrams = drinks.reduce((sum, d) => sum + alcoholGrams(d), 0);
 
@@ -54,7 +56,7 @@ export function estimateBAC(
   const now = Date.now();
   const hoursSinceFirst = (now - firstDrinkTime) / (1000 * 60 * 60);
 
-  const bodyWeightGrams = weightKg * 1000;
+  const bodyWeightGrams = (weightLbs / 2.205) * 1000; // lbs → kg → grams
   const r = WIDMARK_FACTOR[gender] ?? 0.68;
 
   const bac = (totalGrams / (bodyWeightGrams * r)) * 100 - METABOLISM_RATE * hoursSinceFirst;
