@@ -198,7 +198,6 @@ export function SessionDetail({ session, onEndSession }: SessionDetailProps) {
           </div>
         </ScrollArea>
       </div>
-
     </div>
   );
 }
