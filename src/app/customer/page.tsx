@@ -1,86 +1,138 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { supabase } from '@/lib/supabase';
-import { Wine, Activity, User, LogOut, AlertTriangle, CheckCircle2, Info } from 'lucide-react';
+import { estimateBAC, bacRiskLevel, formatBAC } from '@/lib/bac';
+import { Customer, Session, Drink } from '@/lib/types';
+import { DRINK_MENU } from '@/lib/menu';
+import {
+  Wine, Activity, User, LogOut, AlertTriangle, CheckCircle2, Info,
+} from 'lucide-react';
 
-// Simple BAC estimation (weight in lbs, drinks consumed, hours elapsed)
-const estimateBAC = (weight: number, drinks: number, hours: number) => {
-  const gramsAlcoholPerDrink = 14; // standard drink
-  const acetaldehyde = 0.68; // female metabolism, adjust as needed
-  const volumeDistribution = 5.14 / weight; // Widmark formula
-  const bac = (drinks * gramsAlcoholPerDrink * acetaldehyde * volumeDistribution * 100) - (0.15 * hours);
-  return Math.max(0, bac);
-};
-
-// Get risk level and color based on BAC
-const getRiskLevel = (bac: number) => {
-  if (bac < 0.05) return { level: 'Safe', color: 'text-emerald-500', bgColor: 'bg-emerald-500/10', icon: <CheckCircle2 className="size-5 text-emerald-500" /> };
-  if (bac < 0.08) return { level: 'Caution', color: 'text-amber-500', bgColor: 'bg-amber-500/10', icon: <Info className="size-5 text-amber-500" /> };
+// ---- Risk badge helper (UI only) ----
+function getRiskDisplay(bac: number) {
+  const risk = bacRiskLevel(bac);
+  if (risk === 'safe') return { level: 'Safe', color: 'text-emerald-500', bgColor: 'bg-emerald-500/10', icon: <CheckCircle2 className="size-5 text-emerald-500" /> };
+  if (risk === 'caution') return { level: 'Caution', color: 'text-amber-500', bgColor: 'bg-amber-500/10', icon: <Info className="size-5 text-amber-500" /> };
   return { level: 'High Risk', color: 'text-rose-500', bgColor: 'bg-rose-500/10', icon: <AlertTriangle className="size-5 text-rose-500" /> };
-};
+}
 
 export default function CustomerPage() {
-  const [sessionActive, setSessionActive] = useState(false);
-  const [sessionId, setSessionId] = useState<string | null>(null);
-  const [drinks, setDrinks] = useState<number>(0);
-  const [weight, setWeight] = useState<number>(150); // default 150 lbs
-  const [name, setName] = useState<string>('');
-  const [email, setEmail] = useState<string>('');
-  const [loadingProfile, setLoadingProfile] = useState(true);
-  const [startTime, setStartTime] = useState<number>(Date.now());
+  // ---- Onboarding state ----
+  const [customerName, setCustomerName] = useState('');
+  const [weightKg, setWeightKg] = useState(70);
+  const [gender, setGender] = useState<'male' | 'female'>('male');
+
+  // ---- Session state ----
+  const [customer, setCustomer] = useState<Customer | null>(null);
+  const [session, setSession] = useState<Session | null>(null);
+  const [drinks, setDrinks] = useState<Drink[]>([]);
+  const [loading, setLoading] = useState(false);
   const [activeTab, setActiveTab] = useState<'home' | 'drinks' | 'profile'>('home');
 
-  const startSession = () => {
-    const id = Math.random().toString(36).substring(2, 9).toUpperCase();
-    setSessionId(id);
-    setDrinks(0);
-    setStartTime(Date.now());
-    setSessionActive(true);
-  };
+  // ---- Derived ----
+  const bac = customer && drinks.length > 0
+    ? estimateBAC(drinks, customer.weight_kg, customer.gender)
+    : 0;
+  const riskInfo = getRiskDisplay(bac);
+  const bacPercent = Math.min((bac / 0.15) * 100, 100);
+  const hoursElapsed = session
+    ? (Date.now() - new Date(session.started_at).getTime()) / (1000 * 60 * 60)
+    : 0;
 
-  const endSession = () => {
-    setSessionActive(false);
-    setSessionId(null);
-    setDrinks(0);
+  // ---- Start session: creates customer + session in Supabase ----
+  async function startSession() {
+    if (!customerName.trim()) return;
+    setLoading(true);
+    try {
+      // 1. Create customer
+      const { data: cust, error: cErr } = await supabase
+        .from('customers')
+        .insert({ name: customerName.trim(), weight_kg: weightKg, gender })
+        .select()
+        .single();
+      if (cErr || !cust) { console.error('Customer create failed', cErr); return; }
+
+      // 2. Create session
+      const { data: sess, error: sErr } = await supabase
+        .from('sessions')
+        .insert({ customer_id: cust.id })
+        .select()
+        .single();
+      if (sErr || !sess) { console.error('Session create failed', sErr); return; }
+
+      setCustomer(cust as Customer);
+      setSession(sess as Session);
+      setDrinks([]);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  // ---- End session ----
+  async function endSession() {
+    if (!session) return;
+    await supabase
+      .from('sessions')
+      .update({ is_active: false, ended_at: new Date().toISOString() })
+      .eq('id', session.id);
+    setSession(null);
+    setCustomer(null);
+    setDrinks([]);
     setActiveTab('home');
-  };
+  }
 
-  const hoursElapsed = (Date.now() - startTime) / (1000 * 60 * 60);
-  const estimatedBAC = sessionActive ? estimateBAC(weight, drinks, hoursElapsed) : 0;
-  const riskInfo = getRiskLevel(estimatedBAC);
-  const bacPercent = Math.min((estimatedBAC / 0.15) * 100, 100);
+  // ---- Fetch drinks for this session ----
+  const fetchDrinks = useCallback(async () => {
+    if (!session) return;
+    const { data } = await supabase
+      .from('drinks')
+      .select('*')
+      .eq('session_id', session.id)
+      .order('ordered_at', { ascending: true });
+    if (data) setDrinks(data as Drink[]);
+  }, [session]);
 
+  // ---- Realtime: listen for new drinks added by bartender ----
   useEffect(() => {
-    // Load user profile from Supabase if available
-    (async () => {
-      try {
-        const { data: { session } } = await supabase.auth.getSession();
-        const user = session?.user;
-        if (user) {
-          // try to fetch profile from 'profiles' table
-          const { data } = await supabase.from('profiles').select('full_name, email, weight').eq('id', user.id).single();
-          if (data) {
-            setName(data.full_name || user.user_metadata?.full_name || user.user_metadata?.name || user.email || '');
-            setEmail(data.email || user.email || '');
-            if (data.weight) setWeight(data.weight);
-          } else {
-            setName(user.user_metadata?.full_name || user.user_metadata?.name || user.email || '');
-            setEmail(user.email || '');
+    if (!session) return;
+    fetchDrinks(); // initial fetch
+
+    const channel = supabase
+      .channel(`customer-drinks-${session.id}`)
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'drinks', filter: `session_id=eq.${session.id}` },
+        (payload) => {
+          setDrinks((prev) => [...prev, payload.new as Drink]);
+        }
+      )
+      .on(
+        'postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'sessions', filter: `id=eq.${session.id}` },
+        (payload) => {
+          const updated = payload.new as Session;
+          if (!updated.is_active) {
+            // Bartender ended the session
+            setSession(null);
+            setCustomer(null);
+            setDrinks([]);
+            setActiveTab('home');
           }
         }
-      } catch (err) {
-        // ignore
-      } finally {
-        setLoadingProfile(false);
-      }
-    })();
-  }, []);
+      )
+      .subscribe();
 
-  if (!sessionActive) {
+    return () => { supabase.removeChannel(channel); };
+  }, [session, fetchDrinks]);
+
+  // ============================================================
+  // ONBOARDING SCREEN (no active session)
+  // ============================================================
+  if (!session) {
     return (
       <main className="flex min-h-[100dvh] w-full flex-col items-center justify-center bg-background px-6">
         <div className="w-full max-w-md space-y-8 text-center">
@@ -92,13 +144,57 @@ export default function CustomerPage() {
             <p className="text-muted-foreground">Your personal drinking companion</p>
           </div>
 
-          <Card className="border-none shadow-lg">
-            <CardContent className="pt-6">
-              <p className="mb-6 text-sm text-muted-foreground">
-                Start a session to track your drinks, monitor your BAC, and stay safe tonight.
-              </p>
-              <Button onClick={startSession} size="lg" className="w-full rounded-full text-base h-14">
-                Start Session
+          <Card className="border-none shadow-lg text-left">
+            <CardContent className="pt-6 space-y-4">
+              {/* Name */}
+              <div className="space-y-1.5">
+                <label className="text-sm font-medium">Your Name</label>
+                <input
+                  type="text"
+                  value={customerName}
+                  onChange={(e) => setCustomerName(e.target.value)}
+                  placeholder="e.g. Alex"
+                  className="w-full rounded-lg border bg-background px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-primary/50"
+                />
+              </div>
+              {/* Weight */}
+              <div className="space-y-1.5">
+                <label className="text-sm font-medium">Weight (kg)</label>
+                <input
+                  type="number"
+                  value={weightKg}
+                  onChange={(e) => setWeightKg(Number(e.target.value))}
+                  min={30}
+                  max={300}
+                  className="w-full rounded-lg border bg-background px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-primary/50"
+                />
+              </div>
+              {/* Gender */}
+              <div className="space-y-1.5">
+                <label className="text-sm font-medium">Gender</label>
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    onClick={() => setGender('male')}
+                    className={`rounded-lg border px-4 py-3 text-sm font-medium transition-colors ${gender === 'male' ? 'border-primary bg-primary/10 text-primary' : 'hover:bg-muted'}`}
+                  >
+                    Male
+                  </button>
+                  <button
+                    onClick={() => setGender('female')}
+                    className={`rounded-lg border px-4 py-3 text-sm font-medium transition-colors ${gender === 'female' ? 'border-primary bg-primary/10 text-primary' : 'hover:bg-muted'}`}
+                  >
+                    Female
+                  </button>
+                </div>
+              </div>
+
+              <Button
+                onClick={startSession}
+                size="lg"
+                className="w-full rounded-full text-base h-14 mt-2"
+                disabled={!customerName.trim() || loading}
+              >
+                {loading ? 'Starting…' : 'Start Session'}
               </Button>
             </CardContent>
           </Card>
@@ -107,21 +203,26 @@ export default function CustomerPage() {
     );
   }
 
+  // ============================================================
+  // ACTIVE SESSION SCREEN
+  // ============================================================
   return (
     <main className="flex min-h-[100dvh] w-full flex-col bg-muted/30 pb-20">
       <div className="mx-auto w-full max-w-md flex-1 space-y-6 p-4 pt-8">
-        
+
         {/* Header */}
         <header className="flex items-center justify-between px-2">
           <div>
             <p className="text-sm font-medium text-muted-foreground">
-              {loadingProfile ? 'Welcome' : name ? `Hi, ${name.split(' ')[0]}` : 'Welcome'}
+              Hi, {customer?.name.split(' ')[0]}
             </p>
             <h1 className="text-2xl font-bold tracking-tight">Your Session</h1>
           </div>
           <div className="flex flex-col items-end">
-            <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">ID</span>
-            <span className="font-mono text-sm font-bold bg-background px-2 py-1 rounded-md border shadow-sm">{sessionId}</span>
+            <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Session</span>
+            <span className="font-mono text-[10px] font-bold bg-background px-2 py-1 rounded-md border shadow-sm">
+              {session.id.slice(0, 8).toUpperCase()}
+            </span>
           </div>
         </header>
 
@@ -137,23 +238,23 @@ export default function CustomerPage() {
                 <div className="flex flex-col items-center justify-center space-y-2">
                   <span className="text-sm font-medium text-muted-foreground uppercase tracking-wider">Estimated BAC</span>
                   <span className="text-6xl font-black tracking-tighter tabular-nums">
-                    {estimatedBAC.toFixed(3)}
+                    {formatBAC(bac).replace('%', '')}
                   </span>
                   <span className="text-sm font-medium text-muted-foreground">%</span>
                 </div>
-                
+
                 <div className="mt-8 space-y-2">
                   <div className="flex justify-between text-xs font-medium text-muted-foreground">
                     <span>0.00</span>
                     <span>0.08 (Limit)</span>
                     <span>0.15+</span>
                   </div>
-                  <Progress 
-                    value={bacPercent} 
+                  <Progress
+                    value={bacPercent}
                     className={
                       `h-3 ${
-                        estimatedBAC < 0.05 ? '[&>[data-slot=indicator]]:bg-emerald-500' :
-                        estimatedBAC < 0.08 ? '[&>[data-slot=indicator]]:bg-amber-500' : '[&>[data-slot=indicator]]:bg-rose-500'
+                        bac < 0.05 ? '[&>[data-slot=indicator]]:bg-emerald-500' :
+                        bac < 0.08 ? '[&>[data-slot=indicator]]:bg-amber-500' : '[&>[data-slot=indicator]]:bg-rose-500'
                       }`
                     }
                   />
@@ -166,7 +267,7 @@ export default function CustomerPage() {
               <Card className="border-none shadow-sm">
                 <CardContent className="flex flex-col items-center justify-center p-6">
                   <span className="text-sm font-medium text-muted-foreground mb-1">Drinks</span>
-                  <span className="text-4xl font-bold text-primary">{drinks}</span>
+                  <span className="text-4xl font-bold text-primary">{drinks.length}</span>
                 </CardContent>
               </Card>
               <Card className="border-none shadow-sm">
@@ -177,15 +278,9 @@ export default function CustomerPage() {
               </Card>
             </div>
 
-            {/* Add Drink Button */}
-            <Button 
-              onClick={() => setDrinks(d => d + 1)} 
-              size="lg" 
-              className="w-full h-16 rounded-2xl text-lg shadow-lg shadow-primary/25 active:scale-[0.98] transition-transform"
-            >
-              <Wine className="mr-2 size-5" />
-              I just had a drink
-            </Button>
+            <p className="text-center text-xs text-muted-foreground pt-2">
+              Your bartender will add drinks to your session in real time.
+            </p>
           </div>
         )}
 
@@ -194,27 +289,35 @@ export default function CustomerPage() {
             <h2 className="px-2 text-lg font-semibold">Drink History</h2>
             <Card className="border-none shadow-sm">
               <CardContent className="p-0">
-                {drinks === 0 ? (
+                {drinks.length === 0 ? (
                   <div className="flex flex-col items-center justify-center py-12 text-center">
                     <Wine className="size-12 text-muted-foreground/20 mb-4" />
                     <p className="text-muted-foreground">No drinks recorded yet.</p>
+                    <p className="text-xs text-muted-foreground mt-1">Your bartender will add them here.</p>
                   </div>
                 ) : (
                   <div className="divide-y">
-                    {Array.from({ length: drinks }).map((_, i) => (
-                      <div key={i} className="flex items-center justify-between p-4">
-                        <div className="flex items-center gap-3">
-                          <div className="flex size-10 items-center justify-center rounded-full bg-primary/10">
-                            <Wine className="size-5 text-primary" />
+                    {[...drinks].reverse().map((drink) => {
+                      const menuItem = DRINK_MENU.find((m) => m.name === drink.name);
+                      return (
+                        <div key={drink.id} className="flex items-center justify-between p-4">
+                          <div className="flex items-center gap-3">
+                            <div className="flex size-10 items-center justify-center rounded-full bg-primary/10 text-lg">
+                              {menuItem?.emoji ?? '🍸'}
+                            </div>
+                            <div>
+                              <p className="font-medium">{drink.name}</p>
+                              <p className="text-xs text-muted-foreground">
+                                {drink.volume_ml}ml · {drink.abv}% ABV
+                              </p>
+                            </div>
                           </div>
-                          <div>
-                            <p className="font-medium">Standard Drink</p>
-                            <p className="text-xs text-muted-foreground">14g Alcohol</p>
-                          </div>
+                          <span className="text-xs font-medium text-muted-foreground">
+                            {new Date(drink.ordered_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                          </span>
                         </div>
-                        <span className="text-sm font-medium text-muted-foreground">Recorded</span>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 )}
               </CardContent>
@@ -228,18 +331,28 @@ export default function CustomerPage() {
             <Card className="border-none shadow-sm">
               <CardContent className="p-0 divide-y">
                 <div className="flex items-center justify-between p-4">
+                  <span className="font-medium">Name</span>
+                  <span className="text-muted-foreground">{customer?.name}</span>
+                </div>
+                <div className="flex items-center justify-between p-4">
                   <span className="font-medium">Body Weight</span>
-                  <span className="text-muted-foreground">{weight} lbs</span>
+                  <span className="text-muted-foreground">{customer?.weight_kg} kg</span>
+                </div>
+                <div className="flex items-center justify-between p-4">
+                  <span className="font-medium">Gender</span>
+                  <span className="text-muted-foreground capitalize">{customer?.gender}</span>
                 </div>
                 <div className="flex items-center justify-between p-4">
                   <span className="font-medium">Pacing</span>
-                  <span className="text-muted-foreground">{(drinks / Math.max(hoursElapsed, 0.1)).toFixed(1)} / hr</span>
+                  <span className="text-muted-foreground">
+                    {(drinks.length / Math.max(hoursElapsed, 0.1)).toFixed(1)} drinks/hr
+                  </span>
                 </div>
               </CardContent>
             </Card>
 
-            <Button 
-              variant="destructive" 
+            <Button
+              variant="destructive"
               className="w-full mt-8 h-14 rounded-xl"
               onClick={endSession}
             >
@@ -256,21 +369,21 @@ export default function CustomerPage() {
       {/* Bottom Navigation Bar */}
       <div className="fixed bottom-0 left-0 right-0 z-50 border-t bg-background/80 backdrop-blur-lg pb-safe">
         <div className="mx-auto flex max-w-md items-center justify-around p-2">
-          <button 
+          <button
             onClick={() => setActiveTab('home')}
             className={`flex flex-col items-center justify-center w-16 h-14 rounded-xl transition-colors ${activeTab === 'home' ? 'text-primary' : 'text-muted-foreground hover:bg-muted'}`}
           >
             <Activity className="size-6 mb-1" />
             <span className="text-[10px] font-medium">Status</span>
           </button>
-          <button 
+          <button
             onClick={() => setActiveTab('drinks')}
             className={`flex flex-col items-center justify-center w-16 h-14 rounded-xl transition-colors ${activeTab === 'drinks' ? 'text-primary' : 'text-muted-foreground hover:bg-muted'}`}
           >
             <Wine className="size-6 mb-1" />
             <span className="text-[10px] font-medium">Drinks</span>
           </button>
-          <button 
+          <button
             onClick={() => setActiveTab('profile')}
             className={`flex flex-col items-center justify-center w-16 h-14 rounded-xl transition-colors ${activeTab === 'profile' ? 'text-primary' : 'text-muted-foreground hover:bg-muted'}`}
           >
