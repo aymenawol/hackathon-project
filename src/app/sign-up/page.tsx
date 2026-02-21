@@ -1,13 +1,14 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Wine } from 'lucide-react';
 
-export default function SignUpPage() {
+function SignUpPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [loading, setLoading] = useState(false);
@@ -78,5 +79,24 @@ export default function SignUpPage() {
         </Card>
       </div>
     </main>
+  );
+}
+
+export default function SignUpPage() {
+  return (
+    <Suspense
+      fallback={
+        <main className="flex min-h-dvh w-full flex-col items-center justify-center bg-background px-6">
+          <Card className="w-full max-w-sm border-none shadow-lg">
+            <CardContent className="p-8 text-center">
+              <div className="mx-auto mb-4 size-8 animate-spin rounded-full border-4 border-muted border-t-primary" />
+              <p className="text-sm text-muted-foreground">Loading...</p>
+            </CardContent>
+          </Card>
+        </main>
+      }
+    >
+      <SignUpPageContent />
+    </Suspense>
   );
 }

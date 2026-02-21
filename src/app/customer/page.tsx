@@ -1,6 +1,7 @@
  "use client";
 
 import { useEffect, useLayoutEffect, useState, useCallback, useRef } from 'react';
+import { Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -22,7 +23,7 @@ function getRiskDisplay(bac: number) {
   return { level: 'High Risk', color: 'text-rose-500', bgColor: 'bg-rose-500/10', icon: <AlertTriangle className="size-5 text-rose-500" /> };
 }
 
-export default function CustomerPage() {
+function CustomerPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   // ---- Onboarding state ----
@@ -710,5 +711,24 @@ export default function CustomerPage() {
         </div>
       </div>
     </main>
+  );
+}
+
+export default function CustomerPage() {
+  return (
+    <Suspense
+      fallback={
+        <main className="flex min-h-dvh w-full flex-col items-center justify-center bg-background px-6">
+          <Card className="w-full max-w-sm border-0 shadow-xl">
+            <CardContent className="p-8 text-center">
+              <div className="mx-auto mb-4 size-8 animate-spin rounded-full border-4 border-muted border-t-primary" />
+              <p className="text-sm text-muted-foreground">Loading...</p>
+            </CardContent>
+          </Card>
+        </main>
+      }
+    >
+      <CustomerPageContent />
+    </Suspense>
   );
 }

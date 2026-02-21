@@ -2,17 +2,23 @@
 
 import { useState } from "react";
 import { supabase } from "@/lib/supabase";
-import { DRINK_MENU, MenuDrink } from "@/lib/menu";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
+import { DRINK_MENU, DRINK_CATEGORIES, MenuDrink, DrinkCategory } from "@/lib/menu";
 import { cn } from "@/lib/utils";
 
 interface AddDrinkPanelProps {
   sessionId: string;
 }
 
+const CATEGORY_EMOJI: Record<DrinkCategory, string> = {
+  Beer: "🍺",
+  Wine: "🍷",
+  Spirit: "🥃",
+  Other: "🍶",
+};
+
 export function AddDrinkPanel({ sessionId }: AddDrinkPanelProps) {
-  const [adding, setAdding] = useState<string | null>(null); // id of drink being added
+  const [adding, setAdding] = useState<string | null>(null);
+  const [activeCategory, setActiveCategory] = useState<DrinkCategory>("Beer");
 
   async function handleAdd(drink: MenuDrink) {
     setAdding(drink.id);
@@ -30,11 +36,34 @@ export function AddDrinkPanel({ sessionId }: AddDrinkPanelProps) {
     }
   }
 
+  const filteredDrinks = DRINK_MENU.filter((d) => d.category === activeCategory);
+
   return (
-    <div className="flex flex-col gap-2">
+    <div className="flex flex-col gap-3">
       <h3 className="text-sm font-semibold tracking-tight">Add Drink</h3>
-      <div className="grid grid-cols-5 gap-2">
-        {DRINK_MENU.map((drink) => {
+
+      {/* Category tabs */}
+      <div className="flex gap-1 rounded-lg border bg-muted/50 p-1">
+        {DRINK_CATEGORIES.map((cat) => (
+          <button
+            key={cat}
+            onClick={() => setActiveCategory(cat)}
+            className={cn(
+              "flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-colors",
+              activeCategory === cat
+                ? "bg-background text-foreground shadow-sm"
+                : "text-muted-foreground hover:text-foreground"
+            )}
+          >
+            <span>{CATEGORY_EMOJI[cat]}</span>
+            {cat}
+          </button>
+        ))}
+      </div>
+
+      {/* Drink grid */}
+      <div className="grid grid-cols-3 gap-2 sm:grid-cols-4 lg:grid-cols-5">
+        {filteredDrinks.map((drink) => {
           const isLoading = adding === drink.id;
           return (
             <button
