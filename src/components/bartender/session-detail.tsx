@@ -14,10 +14,10 @@ import dynamic from 'next/dynamic';
 const QRCode = dynamic(
   () => import('qrcode.react').then((mod) => {
     const Comp = mod?.QRCodeSVG ?? mod?.QRCodeCanvas ?? (() => null);
-    return { default: Comp } as any;
-  }),
+    return { default: Comp };
+  }) as any,
   { ssr: false }
-);
+) as React.ComponentType<{ value: string; size?: number; level?: string; includeMargin?: boolean }>;
 
 
 interface SessionDetailProps {
