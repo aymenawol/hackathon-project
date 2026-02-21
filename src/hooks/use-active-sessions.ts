@@ -159,43 +159,5 @@ export function useActiveSessions() {
     }
   }, [fetchSessions]);
 
-  // ---- Create pending session when bartender shows QR (session "starts" when customer scans) ----
-  const createPendingSession = useCallback(async (): Promise<{ join_token: string; session_id: string } | null> => {
-    const join_token = generateJoinToken();
-    const { data: placeholderCustomer, error: custErr } = await supabase
-      .from("customers")
-      .insert({
-        name: "Waiting for scan",
-        auth_user_id: null,
-        weight_lbs: 150,
-        gender: "male",
-      })
-      .select("id")
-      .single();
-
-    if (custErr || !placeholderCustomer) {
-      console.error("Failed to create placeholder customer:", custErr);
-      return null;
-    }
-
-    const { data: newSession, error: sessErr } = await supabase
-      .from("sessions")
-      .insert({
-        customer_id: placeholderCustomer.id,
-        join_token,
-        is_active: true,
-      })
-      .select("id, join_token")
-      .single();
-
-    if (sessErr || !newSession) {
-      console.error("Failed to create pending session:", sessErr);
-      return null;
-    }
-
-    await fetchSessions();
-    return { join_token: newSession.join_token ?? join_token, session_id: newSession.id };
-  }, [fetchSessions]);
-
-  return { sessions, loading, endSession, refetch: fetchSessions, createPendingSession };
+  return { sessions, loading, endSession, refetch: fetchSessions };
 }
