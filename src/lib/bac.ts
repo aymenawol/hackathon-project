@@ -79,3 +79,11 @@ export function bacRiskLevel(bac: number): "safe" | "caution" | "danger" {
 export function formatBAC(bac: number): string {
   return `${bac.toFixed(3)}%`;
 }
+
+/**
+ * Estimate hours until BAC reaches 0 (metabolism rate ~0.015/hr).
+ */
+export function hoursUntilSober(bac: number): number {
+  if (bac <= 0) return 0;
+  return Math.ceil((bac / METABOLISM_RATE) * 10) / 10; // round up to 1 decimal
+}
