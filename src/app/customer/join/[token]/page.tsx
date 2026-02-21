@@ -62,7 +62,7 @@ export default function CustomerJoinPage() {
         .from("customers")
         .select("id")
         .eq("auth_user_id", userId)
-        .single();w
+        .single();
 
       if (existingCustomer) {
         customerId = existingCustomer.id;
