@@ -54,19 +54,28 @@ export function useActiveSessions() {
       drinksMap.set(d.session_id, arr);
     }
 
-    // 4. Backfill join_token for sessions that don't have one (e.g. created before feature)
+    // 4. Backfill join_token for sessions that don't have one; ensure every session has one in memory
     for (const s of sessionRows as Session[]) {
       if (!s.join_token) {
         const token = generateJoinToken();
-        await supabase.from("sessions").update({ join_token: token }).eq("id", s.id);
+        const { error: updateErr } = await supabase
+          .from("sessions")
+          .update({ join_token: token })
+          .eq("id", s.id)
+          .select("join_token")
+          .single();
+        if (updateErr) {
+          console.warn("Session join_token backfill failed (RLS?):", updateErr.message);
+        }
         (s as Session).join_token = token;
       }
     }
 
-    // 5. Combine
+    // 5. Combine — explicitly keep join_token on each session
     const combined: ActiveSession[] = sessionRows
       .map((s: Session) => ({
         ...s,
+        join_token: (s as Session).join_token ?? generateJoinToken(),
         customer: customersMap.get(s.customer_id)!,
         drinks: drinksMap.get(s.id) ?? [],
       }))
@@ -112,7 +121,7 @@ export function useActiveSessions() {
           } else {
             setSessions((prev) =>
               prev.map((s) =>
-                s.id === updated.id ? { ...s, ...updated } : s
+                s.id === updated.id ? { ...s, ...updated, join_token: updated.join_token ?? s.join_token } : s
               )
             );
           }
@@ -150,5 +159,43 @@ export function useActiveSessions() {
     }
   }, [fetchSessions]);
 
-  return { sessions, loading, endSession, refetch: fetchSessions };
+  // ---- Create pending session when bartender shows QR (session "starts" when customer scans) ----
+  const createPendingSession = useCallback(async (): Promise<{ join_token: string; session_id: string } | null> => {
+    const join_token = generateJoinToken();
+    const { data: placeholderCustomer, error: custErr } = await supabase
+      .from("customers")
+      .insert({
+        name: "Waiting for scan",
+        auth_user_id: null,
+        weight_lbs: 150,
+        gender: "male",
+      })
+      .select("id")
+      .single();
+
+    if (custErr || !placeholderCustomer) {
+      console.error("Failed to create placeholder customer:", custErr);
+      return null;
+    }
+
+    const { data: newSession, error: sessErr } = await supabase
+      .from("sessions")
+      .insert({
+        customer_id: placeholderCustomer.id,
+        join_token,
+        is_active: true,
+      })
+      .select("id, join_token")
+      .single();
+
+    if (sessErr || !newSession) {
+      console.error("Failed to create pending session:", sessErr);
+      return null;
+    }
+
+    await fetchSessions();
+    return { join_token: newSession.join_token ?? join_token, session_id: newSession.id };
+  }, [fetchSessions]);
+
+  return { sessions, loading, endSession, refetch: fetchSessions, createPendingSession };
 }

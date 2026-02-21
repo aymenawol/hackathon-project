@@ -23,21 +23,39 @@ const QRCode = dynamic(
 }>;
 
 export default function BartenderPage() {
-  const { sessions, loading, endSession } = useActiveSessions();
+  const { sessions, loading, endSession, createPendingSession } = useActiveSessions();
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [showQR, setShowQR] = useState(false);
+  const [qrJoinToken, setQrJoinToken] = useState<string | null>(null);
+  const [qrLoading, setQrLoading] = useState(false);
 
   const selectedSession =
     sessions.find((s) => s.id === selectedId) ?? sessions[0] ?? null;
 
-  // Keep selected in sync if current selection disappears
   const effectiveId = selectedSession?.id ?? null;
 
-  // Build customer check-in URL (works in dev and prod)
-  const customerUrl =
-    typeof window !== "undefined"
-      ? `${window.location.origin}/customer`
-      : "/customer";
+  const origin = typeof window !== "undefined" ? window.location.origin : "";
+  // When QR overlay is open, use the token we created for it; otherwise use selected session's token
+  const joinUrl =
+    (showQR && qrJoinToken)
+      ? `${origin}/customer/join/${qrJoinToken}`
+      : selectedSession?.join_token
+        ? `${origin}/customer/join/${selectedSession.join_token}`
+        : `${origin}/customer`;
+
+  const handleShowQR = async () => {
+    setShowQR(true);
+    setQrLoading(true);
+    setQrJoinToken(null);
+    const result = await createPendingSession();
+    setQrLoading(false);
+    if (result) setQrJoinToken(result.join_token);
+  };
+
+  const handleCloseQR = () => {
+    setShowQR(false);
+    setQrJoinToken(null);
+  };
 
   if (loading) {
     return (
@@ -77,47 +95,58 @@ export default function BartenderPage() {
         </div>
       )}
 
-      {/* Fixed QR code button — bottom-left */}
+      {/* Fixed QR code button — bottom-left: creates a new pending session and shows its unique join URL */}
       <Button
-        onClick={() => setShowQR(true)}
+        onClick={handleShowQR}
         size="lg"
         className="fixed bottom-6 left-6 z-40 gap-2 rounded-full shadow-lg"
+        disabled={qrLoading}
       >
         <QrCode className="size-5" />
         Show QR Code
       </Button>
 
-      {/* QR code fullscreen overlay */}
+      {/* QR overlay: session is created when this opens; customer scanning the QR "starts" and joins that session */}
       {showQR && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm"
-          onClick={() => setShowQR(false)}
+          onClick={handleCloseQR}
         >
           <div
             className="relative flex flex-col items-center gap-6 rounded-2xl border bg-card p-10 shadow-2xl"
             onClick={(e) => e.stopPropagation()}
           >
             <button
-              onClick={() => setShowQR(false)}
+              onClick={handleCloseQR}
               className="absolute right-4 top-4 rounded-full p-1 text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
             >
               <X className="size-5" />
             </button>
 
             <h2 className="text-xl font-semibold tracking-tight">
-              Scan to Check In
+              Scan to join session
             </h2>
             <p className="max-w-xs text-center text-sm text-muted-foreground">
-              Customers without an active session can scan this code to get started.
+              Customer scans this code to open their unique link and start this session.
             </p>
 
-            <div className="rounded-xl border-2 bg-white p-4">
-              <QRCode value={customerUrl} size={280} level="H" includeMargin />
-            </div>
-
-            <p className="text-xs text-muted-foreground select-all break-all max-w-xs text-center">
-              {customerUrl}
-            </p>
+            {qrLoading ? (
+              <div className="flex flex-col items-center gap-3 rounded-xl border-2 bg-muted/30 p-12">
+                <div className="size-10 animate-spin rounded-full border-4 border-muted border-t-primary" />
+                <p className="text-sm text-muted-foreground">Creating unique link…</p>
+              </div>
+            ) : qrJoinToken ? (
+              <>
+                <div className="rounded-xl border-2 bg-white p-4">
+                  <QRCode value={joinUrl} size={280} level="H" includeMargin />
+                </div>
+                <p className="text-xs text-muted-foreground select-all break-all max-w-xs text-center">
+                  {joinUrl}
+                </p>
+              </>
+            ) : (
+              <p className="text-sm text-destructive">Could not create link. Try again.</p>
+            )}
           </div>
         </div>
       )}

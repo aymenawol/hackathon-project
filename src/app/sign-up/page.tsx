@@ -15,6 +15,16 @@ function SignUpPageContent() {
   const [session, setSession] = useState<any | null>(null);
 
   useEffect(() => {
+    // Persist redirect from URL so we still have it after OAuth (callback often drops query params)
+    const redirectFromUrl = searchParams.get('redirect');
+    if (redirectFromUrl && redirectFromUrl.startsWith('/')) {
+      try {
+        sessionStorage.setItem('auth_redirect', redirectFromUrl);
+      } catch (_) {}
+    }
+  }, [searchParams]);
+
+  useEffect(() => {
     // Try to handle OAuth redirect + get current session
     (async () => {
       try {
@@ -28,7 +38,14 @@ function SignUpPageContent() {
         const { data } = await supabase.auth.getSession();
         if (data?.session) {
           setSession(data.session);
-          const redirect = searchParams.get('redirect');
+          // Use redirect from URL first, then from sessionStorage (in case OAuth callback dropped it)
+          let redirect = searchParams.get('redirect');
+          if (!redirect || !redirect.startsWith('/')) {
+            try {
+              redirect = sessionStorage.getItem('auth_redirect');
+              if (redirect) sessionStorage.removeItem('auth_redirect');
+            } catch (_) {}
+          }
           router.push(redirect && redirect.startsWith('/') ? redirect : '/customer');
         }
       } catch (err) {
