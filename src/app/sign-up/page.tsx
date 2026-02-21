@@ -111,7 +111,7 @@ export default function SignUpPage() {
             </div>
 
             <div className="pt-2">
-              <Button type="submit" className="w-full bg-red-600 hover:bg-red-700 text-white py-3">
+              <Button type="submit" className="w-full bg-red-601 hover:bg-red-700 text-white py-3">
                 {loading ? 'Saving…' : 'Finish Onboarding'}
               </Button>
             </div>
