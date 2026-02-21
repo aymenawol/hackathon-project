@@ -8,7 +8,7 @@ import type { Session, Customer, Drink } from "@/lib/types";
 
 interface FriendMessage {
   id: string;
-  type: "session-started" | "high-risk" | "session-ended";
+  type: "high-risk" | "session-ended";
   text: string;
   time: Date;
 }
@@ -24,6 +24,11 @@ export default function FriendPage() {
     if (shownAlertsRef.current.has(msg.id)) return;
     shownAlertsRef.current.add(msg.id);
     setMessages((prev) => [...prev, msg].sort((a, b) => a.time.getTime() - b.time.getTime()));
+
+    // Auto-remove after 25 seconds
+    setTimeout(() => {
+      setMessages((prev) => prev.filter((m) => m.id !== msg.id));
+    }, 25000);
   };
 
   useEffect(() => {
@@ -60,15 +65,7 @@ export default function FriendPage() {
             .order("ordered_at", { ascending: true });
           const drinks = (drinkData || []) as Drink[];
 
-          // --- Message 1: Session started ---
-          addMessage({
-            id: `started-${session.id}`,
-            type: "session-started",
-            text: `📍 SOBR: ${firstName} just checked in at a bar and started a drinking session. We'll keep you updated on how they're doing tonight.`,
-            time: new Date(session.started_at),
-          });
-
-          // --- Message 2: High BAC alert ---
+          // --- High BAC alert ---
           if (customer && drinks.length > 0) {
             const bac = estimateBAC(drinks, customer.weight_lbs, customer.gender);
             if (bac >= 0.08) {
@@ -81,7 +78,7 @@ export default function FriendPage() {
             }
           }
 
-          // --- Message 3: Session ended ---
+          // --- Session ended ---
           if (!session.is_active && session.ended_at) {
             addMessage({
               id: `ended-${session.id}`,
