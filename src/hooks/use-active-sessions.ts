@@ -68,7 +68,7 @@ export function useActiveSessions() {
       })
       .select()
       .single();
-  
+      // just adding a comment
     if (error) {
       console.error("Create session error:", error);
       return null;
