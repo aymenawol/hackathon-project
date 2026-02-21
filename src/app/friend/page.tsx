@@ -15,8 +15,6 @@ interface SmsMessage {
 
 export default function FriendPage() {
   const [messages, setMessages] = useState<SmsMessage[]>([]);
-  // Record when the page opened — only show messages after this time
-  const openedAtRef = useRef(new Date().toISOString());
   const seenIdsRef = useRef(new Set<string>());
 
   const addMessages = useCallback((newMsgs: SmsMessage[]) => {
@@ -24,34 +22,40 @@ export default function FriendPage() {
       const toAdd = newMsgs.filter((m) => !seenIdsRef.current.has(m.id));
       if (toAdd.length === 0) return prev;
       toAdd.forEach((m) => seenIdsRef.current.add(m.id));
-      return [...prev, ...toAdd];
+      const merged = [...prev, ...toAdd].sort(
+        (a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+      );
+      return merged;
     });
   }, []);
 
   useEffect(() => {
-    const openedAt = openedAtRef.current;
+    // Initial fetch — load all messages
+    (async () => {
+      const { data } = await supabase
+        .from("sms_messages")
+        .select("*")
+        .order("created_at", { ascending: true });
+      if (data && data.length > 0) addMessages(data as SmsMessage[]);
+    })();
 
-    // Realtime subscription
+    // Realtime subscription for new inserts
     const channel = supabase
       .channel("friend-sms-live")
       .on(
         "postgres_changes",
         { event: "INSERT", schema: "public", table: "sms_messages" },
         (payload) => {
-          const msg = payload.new as SmsMessage;
-          if (msg.created_at >= openedAt) {
-            addMessages([msg]);
-          }
+          addMessages([payload.new as SmsMessage]);
         }
       )
       .subscribe();
 
-    // Polling fallback every 3 seconds (catches messages if realtime is slow)
+    // Polling fallback every 3 seconds
     const poll = setInterval(async () => {
       const { data } = await supabase
         .from("sms_messages")
         .select("*")
-        .gte("created_at", openedAt)
         .order("created_at", { ascending: true });
       if (data && data.length > 0) {
         addMessages(data as SmsMessage[]);

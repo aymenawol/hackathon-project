@@ -67,13 +67,15 @@ function CustomerPageContent() {
     if (risk === 'danger' && !highRiskSentRef.current) {
       highRiskSentRef.current = true;
       const firstName = customer.name.split(' ')[0];
+      console.log('[SOBR] Inserting high-risk SMS for', firstName, 'BAC:', bac);
       supabase.from('sms_messages').insert({
         phone_number: customer.emergency_phone || 'friend',
         message: `⚠️ SOBR Alert: Your friend ${firstName} has reached a high estimated BAC (${bac.toFixed(3)}%). They may need your help getting home safely tonight. Please check in on them.`,
         type: 'high-risk',
         customer_name: customer.name,
-      }).then(({ error }) => {
-        if (error) console.error('High-risk SMS insert failed:', error);
+      }).then(({ error, data }) => {
+        if (error) console.error('[SOBR] High-risk SMS insert FAILED:', error);
+        else console.log('[SOBR] High-risk SMS insert SUCCESS');
       });
     }
   }, [bac, customer, session]);
@@ -398,6 +400,7 @@ function CustomerPageContent() {
     const message = type === 'high-risk'
       ? `⚠️ SOBR Alert: Your friend ${firstName} has reached a high estimated BAC${currentBac !== undefined ? ` (${currentBac.toFixed(3)}%)` : ''}. They may need your help getting home safely tonight. Please check in on them.`
       : `🍻 SOBR: Your friend ${firstName} just ended their drinking session. Please make sure they get home safely — a quick call or text goes a long way!`;
+    console.log('[SOBR] Inserting SMS type:', type, 'for', firstName);
     try {
       const { error } = await supabase.from('sms_messages').insert({
         phone_number: customer.emergency_phone || 'friend',
@@ -405,9 +408,10 @@ function CustomerPageContent() {
         type,
         customer_name: customer.name,
       });
-      if (error) console.error('Failed to insert friend SMS:', error);
+      if (error) console.error('[SOBR] SMS insert FAILED:', error);
+      else console.log('[SOBR] SMS insert SUCCESS:', type);
     } catch (err) {
-      console.error('Failed to send friend SMS:', err);
+      console.error('[SOBR] SMS insert exception:', err);
     }
   }
 
