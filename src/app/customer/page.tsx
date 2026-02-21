@@ -1,6 +1,6 @@
  "use client";
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useLayoutEffect, useState, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -30,6 +30,9 @@ export default function CustomerPage() {
   const [gender, setGender] = useState<'male' | 'female'>('male');
   const [userId, setUserId] = useState<string | null>(null);
   const [showScanner, setShowScanner] = useState(false);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const scannerRef = useRef<{ stop: () => void; destroy: () => void } | null>(null);
+  const hasScannedRef = useRef(false);
 
   // ---- Session state ----
   const [customer, setCustomer] = useState<Customer | null>(null);
@@ -141,44 +144,63 @@ export default function CustomerPage() {
     }
   }
 
-  // mount scanner when requested
+  // Preload qr-scanner so "Scan QR to Join" opens camera immediately (no import delay)
   useEffect(() => {
+    import('qr-scanner');
+  }, []);
+
+  // ---- QR scanner: start camera as soon as modal opens; stop immediately on first scan ----
+  useLayoutEffect(() => {
     if (!showScanner) return;
 
-    let scanner: any = null;
-    let mounted = true;
+    hasScannedRef.current = false;
+    const video = videoRef.current;
+    if (!video) return;
 
+    let mounted = true;
     (async () => {
       try {
-        const mod = await import('html5-qrcode');
-        const Html5QrcodeScanner = mod.Html5QrcodeScanner || mod.Html5Qrcode || mod.default?.Html5QrcodeScanner;
-        if (!Html5QrcodeScanner) throw new Error('Html5QrcodeScanner not found in html5-qrcode module');
+        const QrScanner = (await import('qr-scanner')).default;
+        if (!mounted || !videoRef.current) return;
 
-        // instantiate scanner
-        // @ts-ignore
-        scanner = new Html5QrcodeScanner('qr-reader', { fps: 10, qrbox: 250, rememberLastUsedCamera: true }, false);
-        scanner.render(
-          (decodedText: string) => {
-            if (!mounted) return;
-            console.log('QR decoded:', decodedText);
-            joinSessionViaQR(decodedText);
-            try { scanner.clear(); } catch (e) { /* ignore */ }
+        const scanner = new QrScanner(
+          video,
+          (result) => {
+            if (hasScannedRef.current || !mounted) return;
+            const code = typeof result === 'string' ? result : result?.data;
+            if (!code) return;
+            hasScannedRef.current = true;
+            try {
+              scanner.stop();
+              scanner.destroy();
+            } catch (e) { /* ignore */ }
+            scannerRef.current = null;
             setShowScanner(false);
+            joinSessionViaQR(code);
           },
-          (error: any) => {
-            console.log('QR scan error', error);
+          {
+            returnDetailedScanResult: true,
+            preferredCamera: 'environment',
+            maxScansPerSecond: 25,
+            highlightScanRegion: true,
           }
         );
+        scannerRef.current = scanner;
+        await scanner.start();
       } catch (err) {
-        console.error('Failed to start scanner:', err);
-        alert('Unable to access camera for QR scanning.');
+        console.error('Failed to start QR scanner:', err);
+        alert('Unable to access camera. Please allow camera access and try again.');
         setShowScanner(false);
       }
     })();
 
     return () => {
       mounted = false;
-      try { if (scanner) scanner.clear(); } catch (e) { /* ignore */ }
+      const s = scannerRef.current;
+      if (s) {
+        try { s.stop(); s.destroy(); } catch (e) { /* ignore */ }
+        scannerRef.current = null;
+      }
     };
   }, [showScanner]);
 
@@ -355,13 +377,20 @@ export default function CustomerPage() {
     return (
       <>
         {showScanner && (
-          <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-black/75 p-4">
-            <div className="w-full max-w-md bg-white rounded-2xl p-4 shadow-lg">
-              <h3 className="text-lg font-semibold mb-2">Scan QR Code</h3>
-              <div id="qr-reader" className="w-full h-[360px]" />
-              <div className="mt-4 flex gap-2">
-                <Button onClick={() => { setShowScanner(false); }} className="flex-1">Cancel</Button>
-              </div>
+          <div className="fixed inset-0 z-50 flex flex-col bg-black">
+            <div className="relative flex-1 min-h-0 flex flex-col">
+              <video
+                ref={videoRef}
+                className="block w-full h-full object-cover"
+                playsInline
+                muted
+                autoPlay
+              />
+            </div>
+            <div className="p-4 bg-black/80 flex gap-2">
+              <Button onClick={() => setShowScanner(false)} variant="outline" className="flex-1">
+                Cancel
+              </Button>
             </div>
           </div>
         )}
