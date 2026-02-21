@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 import { supabase } from "@/lib/supabase";
 import { ChevronLeft, Video, Phone } from "lucide-react";
 
@@ -15,29 +15,54 @@ interface SmsMessage {
 
 export default function FriendPage() {
   const [messages, setMessages] = useState<SmsMessage[]>([]);
+  // Record when the page opened — only show messages after this time
+  const openedAtRef = useRef(new Date().toISOString());
+  const seenIdsRef = useRef(new Set<string>());
+
+  const addMessages = useCallback((newMsgs: SmsMessage[]) => {
+    setMessages((prev) => {
+      const toAdd = newMsgs.filter((m) => !seenIdsRef.current.has(m.id));
+      if (toAdd.length === 0) return prev;
+      toAdd.forEach((m) => seenIdsRef.current.add(m.id));
+      return [...prev, ...toAdd];
+    });
+  }, []);
 
   useEffect(() => {
-    (async () => {
-      const { data } = await supabase
-        .from("sms_messages")
-        .select("*")
-        .order("created_at", { ascending: true });
-      if (data) setMessages(data as SmsMessage[]);
-    })();
+    const openedAt = openedAtRef.current;
 
+    // Realtime subscription
     const channel = supabase
-      .channel("friend-sms-all")
+      .channel("friend-sms-live")
       .on(
         "postgres_changes",
         { event: "INSERT", schema: "public", table: "sms_messages" },
         (payload) => {
-          setMessages((prev) => [...prev, payload.new as SmsMessage]);
+          const msg = payload.new as SmsMessage;
+          if (msg.created_at >= openedAt) {
+            addMessages([msg]);
+          }
         }
       )
       .subscribe();
 
-    return () => { supabase.removeChannel(channel); };
-  }, []);
+    // Polling fallback every 3 seconds (catches messages if realtime is slow)
+    const poll = setInterval(async () => {
+      const { data } = await supabase
+        .from("sms_messages")
+        .select("*")
+        .gte("created_at", openedAt)
+        .order("created_at", { ascending: true });
+      if (data && data.length > 0) {
+        addMessages(data as SmsMessage[]);
+      }
+    }, 3000);
+
+    return () => {
+      supabase.removeChannel(channel);
+      clearInterval(poll);
+    };
+  }, [addMessages]);
 
   // Get the customer name from the latest message for the header
   const contactName = messages.length > 0
