@@ -33,10 +33,14 @@ export default function FriendPage() {
 
   useEffect(() => {
     let stopped = false;
+    let firstPoll = true;
+
+    // Snapshot of state at page load — we skip alerts for these
+    const alreadyHighRisk = new Set<string>();
+    const alreadyEnded = new Set<string>();
 
     async function poll() {
       while (!stopped) {
-        // 1. Find the most recent session (active or recently ended)
         const { data: sessions } = await supabase
           .from("sessions")
           .select("*")
@@ -46,7 +50,6 @@ export default function FriendPage() {
         const session = sessions?.[0] as Session | undefined;
 
         if (session) {
-          // Get customer name
           const { data: custData } = await supabase
             .from("customers")
             .select("*")
@@ -57,7 +60,6 @@ export default function FriendPage() {
           const firstName = name.split(" ")[0];
           setContactName(firstName);
 
-          // Get drinks for this session
           const { data: drinkData } = await supabase
             .from("drinks")
             .select("*")
@@ -65,31 +67,43 @@ export default function FriendPage() {
             .order("ordered_at", { ascending: true });
           const drinks = (drinkData || []) as Drink[];
 
-          // --- High BAC alert ---
-          if (customer && drinks.length > 0) {
-            const bac = estimateBAC(drinks, customer.weight_lbs, customer.gender);
-            if (bac >= 0.08) {
+          // Check high BAC
+          const isHighRisk = customer && drinks.length > 0 &&
+            estimateBAC(drinks, customer.weight_lbs, customer.gender) >= 0.08;
+
+          // Check session ended
+          const isEnded = !session.is_active && !!session.ended_at;
+
+          if (firstPoll) {
+            // Record existing state at page load — don't alert for these
+            if (isHighRisk) alreadyHighRisk.add(session.id);
+            if (isEnded) alreadyEnded.add(session.id);
+            firstPoll = false;
+          } else {
+            // Only alert on NEW state changes after page load
+            if (isHighRisk && !alreadyHighRisk.has(session.id)) {
+              alreadyHighRisk.add(session.id);
+              const bac = estimateBAC(drinks, customer!.weight_lbs, customer!.gender);
               addMessage({
                 id: `highrisk-${session.id}`,
                 type: "high-risk",
                 text: `⚠️ SOBR Alert: ${firstName} has reached a high estimated BAC (${formatBAC(bac)}). They may need your help getting home safely tonight. Please check in on them.`,
-                time: new Date(), // now
+                time: new Date(),
+              });
+            }
+
+            if (isEnded && !alreadyEnded.has(session.id)) {
+              alreadyEnded.add(session.id);
+              addMessage({
+                id: `ended-${session.id}`,
+                type: "session-ended",
+                text: `🍻 SOBR: ${firstName} just ended their drinking session. Please make sure they get home safely — a quick call or text goes a long way!`,
+                time: new Date(session.ended_at!),
               });
             }
           }
-
-          // --- Session ended ---
-          if (!session.is_active && session.ended_at) {
-            addMessage({
-              id: `ended-${session.id}`,
-              type: "session-ended",
-              text: `🍻 SOBR: ${firstName} just ended their drinking session. Please make sure they get home safely — a quick call or text goes a long way!`,
-              time: new Date(session.ended_at),
-            });
-          }
         }
 
-        // Wait 3 seconds before polling again
         await new Promise((r) => setTimeout(r, 3000));
       }
     }
