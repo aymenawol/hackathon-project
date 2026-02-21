@@ -176,7 +176,16 @@ export default function CustomerPage() {
             } catch (e) { /* ignore */ }
             scannerRef.current = null;
             setShowScanner(false);
-            joinSessionViaQR(code);
+
+            // If the QR contains a URL (e.g. the bartender's check-in QR),
+            // the customer is already on this page — nothing more to do.
+            const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+            if (UUID_RE.test(code)) {
+              joinSessionViaQR(code);
+            } else {
+              // Not a session UUID — likely the /customer URL QR
+              alert('You\'re already on the check-in page. Fill out your details and tap "Start Session" to begin!');
+            }
           },
           {
             returnDetailedScanResult: true,
