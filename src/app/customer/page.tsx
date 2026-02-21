@@ -213,13 +213,20 @@ function CustomerPageContent() {
             scannerRef.current = null;
             setShowScanner(false);
 
-            // If the QR contains a URL (e.g. the bartender's check-in QR),
-            // the customer is already on this page — nothing more to do.
+            // Parse scanned QR code:
+            // 1. URL with /customer/join/<token> → redirect to join page
+            // 2. Raw UUID → legacy direct session join
+            // 3. Anything else → already on check-in page
+            const joinMatch = code.match(/\/customer\/join\/([^/?#]+)/);
             const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-            if (UUID_RE.test(code)) {
+
+            if (joinMatch) {
+              // Redirect to the join URL (handles auth + session linking)
+              const joinUrl = code.startsWith('http') ? code : `${window.location.origin}/customer/join/${joinMatch[1]}`;
+              window.location.href = joinUrl;
+            } else if (UUID_RE.test(code)) {
               joinSessionViaQR(code);
             } else {
-              // Not a session UUID — likely the /customer URL QR
               alert('You\'re already on the check-in page. Fill out your details and tap "Start Session" to begin!');
             }
           },
