@@ -30,6 +30,7 @@ function CustomerPageContent() {
   const [customerName, setCustomerName] = useState('');
   const [weightLbs, setWeightLbs] = useState(150);
   const [gender, setGender] = useState<'male' | 'female'>('male');
+  const [emergencyPhone, setEmergencyPhone] = useState('');
   const [userId, setUserId] = useState<string | null>(null);
   const [showScanner, setShowScanner] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -46,6 +47,9 @@ function CustomerPageContent() {
   // Snapshot data for Breathy when user or bartender triggers end
   const [breathyData, setBreathyData] = useState<{ customer: Customer; drinks: Drink[]; hours: number } | null>(null);
 
+  // Track whether we've already sent the high-risk SMS for this session
+  const highRiskSentRef = useRef(false);
+
   // ---- Derived ----
   const bac = customer && drinks.length > 0
     ? estimateBAC(drinks, customer.weight_lbs, customer.gender)
@@ -55,6 +59,30 @@ function CustomerPageContent() {
   const hoursElapsed = session
     ? (Date.now() - new Date(session.started_at).getTime()) / (1000 * 60 * 60)
     : 0;
+
+  // ---- Send high-risk SMS when BAC enters danger zone ----
+  useEffect(() => {
+    if (!customer?.emergency_phone || !session) return;
+    const risk = bacRiskLevel(bac);
+    if (risk === 'danger' && !highRiskSentRef.current) {
+      highRiskSentRef.current = true;
+      fetch('/api/sms', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          to: customer.emergency_phone,
+          type: 'high-risk',
+          customerName: customer.name,
+          bac: `${bac.toFixed(3)}%`,
+        }),
+      }).catch((err) => console.error('High-risk SMS failed:', err));
+    }
+  }, [bac, customer, session]);
+
+  // Reset high-risk flag when session changes
+  useEffect(() => {
+    highRiskSentRef.current = false;
+  }, [session?.id]);
 
   // ---- Load authenticated user info ----
   useEffect(() => {
@@ -83,6 +111,7 @@ function CustomerPageContent() {
         setCustomer(existingCustomer as Customer);
         setWeightLbs(existingCustomer.weight_lbs || 150);
         setGender(existingCustomer.gender || 'male');
+        setEmergencyPhone(existingCustomer.emergency_phone || '');
       }
     })();
   }, [router]);
@@ -139,7 +168,8 @@ function CustomerPageContent() {
         .update({ 
           name: customerName.trim(), 
           weight_lbs: weightLbs, 
-          gender 
+          gender,
+          emergency_phone: emergencyPhone.trim() || null,
         })
         .eq('auth_user_id', userId)
         .select()
@@ -279,7 +309,8 @@ function CustomerPageContent() {
           .update({ 
             name: customerName.trim(), 
             weight_lbs: weightLbs, 
-            gender 
+            gender,
+            emergency_phone: emergencyPhone.trim() || null,
           })
           .eq('auth_user_id', userId)
           .select()
@@ -296,7 +327,8 @@ function CustomerPageContent() {
             auth_user_id: userId,
             name: customerName.trim(), 
             weight_lbs: weightLbs, 
-            gender 
+            gender,
+            emergency_phone: emergencyPhone.trim() || null,
           })
           .select()
           .single();
@@ -360,8 +392,31 @@ function CustomerPageContent() {
     setShowBreathy(true);
   }
 
+  // ---- Send safety SMS to trusted friend ----
+  async function sendFriendSMS(type: 'high-risk' | 'session-ended', currentBac?: number) {
+    const phone = customer?.emergency_phone;
+    if (!phone || !customer) return;
+    try {
+      await fetch('/api/sms', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          to: phone,
+          type,
+          customerName: customer.name,
+          bac: currentBac !== undefined ? `${currentBac.toFixed(3)}%` : undefined,
+        }),
+      });
+    } catch (err) {
+      console.error('Failed to send friend SMS:', err);
+    }
+  }
+
   // ---- Actually end session (called after Breathy confirmation) ----
   async function confirmEndSession() {
+    // Notify trusted friend that session ended
+    await sendFriendSMS('session-ended');
+
     if (session) {
       await supabase
         .from('sessions')
@@ -500,6 +555,20 @@ function CustomerPageContent() {
                     Female
                   </button>
                 </div>
+              </div>
+              {/* Trusted Friend Phone */}
+              <div className="space-y-1.5">
+                <label className="text-sm font-medium">Trusted Friend&apos;s Phone</label>
+                <input
+                  type="tel"
+                  value={emergencyPhone}
+                  onChange={(e) => setEmergencyPhone(e.target.value)}
+                  placeholder="e.g. +1 555-123-4567"
+                  className="w-full rounded-lg border bg-background px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-primary/50"
+                />
+                <p className="text-xs text-muted-foreground">
+                  We&apos;ll text them if you reach a high risk level or when your session ends so they can make sure you get home safe.
+                </p>
               </div>
 
               <Button
@@ -656,6 +725,12 @@ function CustomerPageContent() {
                 <div className="flex items-center justify-between p-4">
                   <span className="font-medium">Gender</span>
                   <span className="text-muted-foreground capitalize">{customer?.gender}</span>
+                </div>
+                <div className="flex items-center justify-between p-4">
+                  <span className="font-medium">Trusted Friend</span>
+                  <span className="text-muted-foreground">
+                    {customer?.emergency_phone || 'Not set'}
+                  </span>
                 </div>
                 <div className="flex items-center justify-between p-4">
                   <span className="font-medium">Pacing</span>

@@ -8,6 +8,8 @@ export interface Customer {
   name: string;
   weight_lbs: number;
   gender: "male" | "female";
+  /** Trusted friend's phone number for safety alerts */
+  emergency_phone?: string | null;
   created_at: string;
 }
 
