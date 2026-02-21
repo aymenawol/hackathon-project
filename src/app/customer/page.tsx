@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
+import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
@@ -21,10 +22,12 @@ function getRiskDisplay(bac: number) {
 }
 
 export default function CustomerPage() {
+  const router = useRouter();
   // ---- Onboarding state ----
   const [customerName, setCustomerName] = useState('');
   const [weightLbs, setWeightLbs] = useState(150);
   const [gender, setGender] = useState<'male' | 'female'>('male');
+  const [userId, setUserId] = useState<string | null>(null);
 
   // ---- Session state ----
   const [customer, setCustomer] = useState<Customer | null>(null);
@@ -43,30 +46,123 @@ export default function CustomerPage() {
     ? (Date.now() - new Date(session.started_at).getTime()) / (1000 * 60 * 60)
     : 0;
 
-  // ---- Start session: creates customer + session in Supabase ----
+  // ---- Load authenticated user info ----
+  useEffect(() => {
+    (async () => {
+      const { data: { session: authSession } } = await supabase.auth.getSession();
+      if (!authSession) {
+        router.push('/sign-up');
+        return;
+      }
+      
+      const user = authSession.user;
+      setUserId(user.id);
+
+      // Pre-fill name from Google OAuth metadata
+      const googleName = user.user_metadata?.full_name || user.user_metadata?.name || user.email || 'Guest';
+      setCustomerName(googleName);
+
+      // Try to load existing customer data
+      const { data: existingCustomer } = await supabase
+        .from('customers')
+        .select('*')
+        .eq('auth_user_id', user.id)
+        .single();
+      
+      if (existingCustomer) {
+        setCustomer(existingCustomer as Customer);
+        setWeightLbs(existingCustomer.weight_lbs || 150);
+        setGender(existingCustomer.gender || 'male');
+      }
+    })();
+  }, [router]);
+
+  // ---- Start session: creates or updates customer + session in Supabase ----
   async function startSession() {
-    if (!customerName.trim()) return;
+    if (!customerName.trim() || !userId) return;
     setLoading(true);
     try {
-      // 1. Create customer
-      const { data: cust, error: cErr } = await supabase
+      // 1. Check if customer already exists
+      console.log('Checking for existing customer with auth_user_id:', userId);
+      const { data: existingCustomers } = await supabase
         .from('customers')
-        .insert({ name: customerName.trim(), weight_lbs: weightLbs, gender })
-        .select()
-        .single();
-      if (cErr || !cust) { console.error('Customer create failed', cErr); return; }
+        .select('*')
+        .eq('auth_user_id', userId);
+
+      let cust;
+      let cErr;
+
+      if (existingCustomers && existingCustomers.length > 0) {
+        // Update existing customer
+        console.log('Customer exists, updating...');
+        const { data: updated, error: updateErr } = await supabase
+          .from('customers')
+          .update({ 
+            name: customerName.trim(), 
+            weight_lbs: weightLbs, 
+            gender 
+          })
+          .eq('auth_user_id', userId)
+          .select()
+          .single();
+        
+        cust = updated;
+        cErr = updateErr;
+      } else {
+        // Create new customer
+        console.log('No existing customer, creating new one...');
+        const { data: created, error: createErr } = await supabase
+          .from('customers')
+          .insert({ 
+            auth_user_id: userId,
+            name: customerName.trim(), 
+            weight_lbs: weightLbs, 
+            gender 
+          })
+          .select()
+          .single();
+        
+        cust = created;
+        cErr = createErr;
+      }
+      
+      if (cErr) { 
+        console.error('Customer save error:', cErr);
+        alert(`Error saving customer: ${cErr.message}`);
+        return;
+      }
+      if (!cust) { 
+        alert('No customer data returned');
+        return;
+      }
+
+      console.log('Customer saved:', cust);
 
       // 2. Create session
+      console.log('Creating session for customer:', cust.id);
       const { data: sess, error: sErr } = await supabase
         .from('sessions')
         .insert({ customer_id: cust.id })
         .select()
         .single();
-      if (sErr || !sess) { console.error('Session create failed', sErr); return; }
+      
+      if (sErr) { 
+        console.error('Session creation error:', sErr);
+        alert(`Error creating session: ${sErr.message}`);
+        return;
+      }
+      if (!sess) { 
+        alert('No session data returned');
+        return;
+      }
 
+      console.log('Session created:', sess);
       setCustomer(cust as Customer);
       setSession(sess as Session);
       setDrinks([]);
+    } catch (err) {
+      console.error('Unexpected error:', err);
+      alert(`Unexpected error: ${err instanceof Error ? err.message : String(err)}`);
     } finally {
       setLoading(false);
     }
