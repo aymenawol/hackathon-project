@@ -11,6 +11,8 @@ interface ChatMessage {
   content: string;
 }
 
+//important
+
 interface BreathyModalProps {
   customer: Customer;
   drinks: Drink[];
