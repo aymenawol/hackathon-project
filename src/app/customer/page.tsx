@@ -140,7 +140,7 @@ export default function CustomerPage() {
             <div className="mx-auto flex size-20 items-center justify-center rounded-full bg-primary/10">
               <Wine className="size-10 text-primary" />
             </div>
-            <h1 className="text-3xl font-bold tracking-tight">SOMBR</h1>
+            <h1 className="text-3xl font-bold tracking-tight">SOBR</h1>
             <p className="text-muted-foreground">Your personal drinking companion</p>
           </div>
 
