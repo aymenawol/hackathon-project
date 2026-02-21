@@ -125,11 +125,20 @@ export function useActiveSessions() {
 
   // ---- End session ----
   const endSession = useCallback(async (sessionId: string) => {
-    await supabase
+    // Optimistically remove from UI immediately
+    setSessions((prev) => prev.filter((s) => s.id !== sessionId));
+
+    const { error } = await supabase
       .from("sessions")
       .update({ is_active: false, ended_at: new Date().toISOString() })
       .eq("id", sessionId);
-  }, []);
+
+    if (error) {
+      console.error("Failed to end session:", error);
+      // Refetch to restore state on failure
+      fetchSessions();
+    }
+  }, [fetchSessions]);
 
   return { sessions, loading, endSession, refetch: fetchSessions };
 }

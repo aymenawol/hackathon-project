@@ -10,14 +10,6 @@ import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { AddDrinkPanel } from "@/components/bartender/add-drink-panel";
 import { cn } from "@/lib/utils";
-import dynamic from 'next/dynamic';
-const QRCode = dynamic(
-  () => import('qrcode.react').then((mod) => {
-    const Comp = mod?.QRCodeSVG ?? mod?.QRCodeCanvas ?? (() => null);
-    return { default: Comp };
-  }) as any,
-  { ssr: false }
-) as React.ComponentType<{ value: string; size?: number; level?: string; includeMargin?: boolean }>;
 
 
 interface SessionDetailProps {
@@ -205,12 +197,6 @@ export function SessionDetail({ session, onEndSession }: SessionDetailProps) {
             ))}
           </div>
         </ScrollArea>
-      </div>
-      {/* Floating QR code at bottom-left of viewport */}
-      <div className="fixed left-4 bottom-6 z-50">
-        <Card className="p-2 border-2 shadow-lg">
-          <QRCode value={session.id} size={110} level="H" includeMargin={false} />
-        </Card>
       </div>
     </div>
   );
