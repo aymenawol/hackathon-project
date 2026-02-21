@@ -30,7 +30,7 @@ export function useActiveSessions() {
   useEffect(() => {
     fetchSessions();
 
-    // 🔥 Realtime listener for when customer joins session
+    // 🔥 Realtime listeners: refresh when sessions or drinks change
     const channel = supabase
       .channel("sessions-realtime")
       .on(
@@ -42,6 +42,17 @@ export function useActiveSessions() {
         },
         () => {
           fetchSessions(); // refetch when session updates
+        }
+      )
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "drinks",
+        },
+        () => {
+          fetchSessions(); // refetch when drinks are added/updated/deleted
         }
       )
       .subscribe();
