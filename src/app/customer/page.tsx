@@ -62,7 +62,7 @@ function CustomerPageContent() {
 
   // ---- Send high-risk SMS when BAC enters danger zone ----
   useEffect(() => {
-    if (!customer?.emergency_phone || !session) return;
+    if (!customer || !session) return;
     const risk = bacRiskLevel(bac);
     if (risk === 'danger' && !highRiskSentRef.current) {
       highRiskSentRef.current = true;
@@ -70,7 +70,7 @@ function CustomerPageContent() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          to: customer.emergency_phone,
+          to: customer.emergency_phone || 'friend',
           type: 'high-risk',
           customerName: customer.name,
           bac: `${bac.toFixed(3)}%`,
@@ -394,14 +394,13 @@ function CustomerPageContent() {
 
   // ---- Send safety SMS to trusted friend ----
   async function sendFriendSMS(type: 'high-risk' | 'session-ended', currentBac?: number) {
-    const phone = customer?.emergency_phone;
-    if (!phone || !customer) return;
+    if (!customer) return;
     try {
       await fetch('/api/sms', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          to: phone,
+          to: customer.emergency_phone || 'friend',
           type,
           customerName: customer.name,
           bac: currentBac !== undefined ? `${currentBac.toFixed(3)}%` : undefined,
