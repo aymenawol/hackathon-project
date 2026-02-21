@@ -2,7 +2,6 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
 import { Customer, Drink } from '@/lib/types';
 import { estimateBAC, bacRiskLevel, formatBAC, hoursUntilSober } from '@/lib/bac';
 import { Wind, Send, ShieldCheck, Loader2 } from 'lucide-react';
@@ -112,20 +111,21 @@ export function BreathyModal({ customer, drinks, hoursElapsed, onConfirmEnd }: B
   const showQuickReplies = messages.length >= 2 && messages.length <= 4 && !loading;
 
   return (
-    <div className="fixed inset-0 z-[100] flex flex-col bg-background">
-      {/* Header */}
-      <div className="flex items-center gap-3 border-b px-4 py-3 bg-background/80 backdrop-blur-lg">
-        <div className="flex size-10 items-center justify-center rounded-full bg-primary/10">
-          <Wind className="size-5 text-primary" />
-        </div>
-        <div className="flex-1">
-          <h2 className="text-sm font-semibold">Breathy</h2>
-          <p className="text-xs text-muted-foreground">
-            {loading ? 'typing…' : 'Your AI session buddy'}
-          </p>
-        </div>
-        <div className="flex items-center gap-2">
-          <div className={`px-2.5 py-1 rounded-full text-xs font-semibold ${
+    <div className="fixed inset-0 z-[100] flex items-end justify-center bg-black/40 backdrop-blur-sm">
+      {/* Popup card anchored to bottom, max height 70vh */}
+      <div className="w-full max-w-md mx-4 mb-4 flex flex-col overflow-hidden rounded-2xl border bg-background shadow-2xl" style={{ maxHeight: '70vh' }}>
+        {/* Header */}
+        <div className="flex items-center gap-3 border-b px-4 py-3">
+          <div className="flex size-9 items-center justify-center rounded-full bg-primary/10">
+            <Wind className="size-4 text-primary" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <h2 className="text-sm font-semibold">Breathy</h2>
+            <p className="text-xs text-muted-foreground truncate">
+              {loading ? 'typing…' : 'Your AI session buddy'}
+            </p>
+          </div>
+          <div className={`px-2 py-0.5 rounded-full text-[11px] font-semibold ${
             risk === 'danger' ? 'bg-rose-500/10 text-rose-500' :
             risk === 'caution' ? 'bg-amber-500/10 text-amber-500' :
             'bg-emerald-500/10 text-emerald-500'
@@ -133,115 +133,111 @@ export function BreathyModal({ customer, drinks, hoursElapsed, onConfirmEnd }: B
             BAC {formatBAC(bac)}
           </div>
         </div>
-      </div>
 
-      {/* Messages */}
-      <div ref={scrollRef} className="flex-1 overflow-y-auto px-4 py-4 space-y-4">
-        {/* Initial system card */}
-        <div className="flex justify-center">
-          <Card className="border-none shadow-sm bg-muted/50 max-w-[280px]">
-            <CardContent className="p-3 text-center">
-              <p className="text-xs text-muted-foreground">
-                🔒 You must chat with Breathy before closing your tab
-              </p>
-            </CardContent>
-          </Card>
-        </div>
+        {/* Messages */}
+        <div ref={scrollRef} className="flex-1 overflow-y-auto px-3 py-3 space-y-3">
+          {/* System notice */}
+          <div className="flex justify-center">
+            <span className="inline-block rounded-full bg-muted px-3 py-1 text-[11px] text-muted-foreground">
+              🔒 Chat with Breathy before closing your tab
+            </span>
+          </div>
 
-        {messages.map((msg, i) => (
-          <div
-            key={i}
-            className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
-          >
-            {msg.role === 'assistant' && (
-              <div className="flex size-7 shrink-0 items-center justify-center rounded-full bg-primary/10 mr-2 mt-1">
-                <Wind className="size-3.5 text-primary" />
-              </div>
-            )}
+          {messages.map((msg, i) => (
             <div
-              className={`max-w-[80%] rounded-2xl px-4 py-2.5 text-sm leading-relaxed ${
-                msg.role === 'user'
-                  ? 'bg-primary text-primary-foreground rounded-br-md'
-                  : 'bg-muted rounded-bl-md'
-              }`}
+              key={i}
+              className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
             >
-              {msg.content}
-            </div>
-          </div>
-        ))}
-
-        {/* Typing indicator */}
-        {loading && (
-          <div className="flex justify-start">
-            <div className="flex size-7 shrink-0 items-center justify-center rounded-full bg-primary/10 mr-2 mt-1">
-              <Wind className="size-3.5 text-primary" />
-            </div>
-            <div className="bg-muted rounded-2xl rounded-bl-md px-4 py-3">
-              <div className="flex gap-1">
-                <span className="size-2 rounded-full bg-muted-foreground/40 animate-bounce" style={{ animationDelay: '0ms' }} />
-                <span className="size-2 rounded-full bg-muted-foreground/40 animate-bounce" style={{ animationDelay: '150ms' }} />
-                <span className="size-2 rounded-full bg-muted-foreground/40 animate-bounce" style={{ animationDelay: '300ms' }} />
+              {msg.role === 'assistant' && (
+                <div className="flex size-6 shrink-0 items-center justify-center rounded-full bg-primary/10 mr-1.5 mt-1">
+                  <Wind className="size-3 text-primary" />
+                </div>
+              )}
+              <div
+                className={`max-w-[80%] rounded-2xl px-3 py-2 text-sm leading-relaxed ${
+                  msg.role === 'user'
+                    ? 'bg-primary text-primary-foreground rounded-br-md'
+                    : 'bg-muted rounded-bl-md'
+                }`}
+              >
+                {msg.content}
               </div>
             </div>
-          </div>
-        )}
+          ))}
 
-        {/* Quick replies */}
-        {showQuickReplies && (
-          <div className="flex flex-wrap gap-2 pt-1">
-            {quickReplies.map((text) => (
-              <button
-                key={text}
-                onClick={() => {
-                  setInput('');
-                  const userMsg: ChatMessage = { role: 'user', content: text };
-                  const updated = [...messages, userMsg];
-                  setMessages(updated);
-                  sendToBreathy(updated);
-                }}
-                className="rounded-full border bg-background px-3 py-1.5 text-xs font-medium text-muted-foreground hover:bg-muted transition-colors"
-              >
-                {text}
-              </button>
-            ))}
-          </div>
-        )}
-      </div>
+          {/* Typing indicator */}
+          {loading && (
+            <div className="flex justify-start">
+              <div className="flex size-6 shrink-0 items-center justify-center rounded-full bg-primary/10 mr-1.5 mt-1">
+                <Wind className="size-3 text-primary" />
+              </div>
+              <div className="bg-muted rounded-2xl rounded-bl-md px-3 py-2.5">
+                <div className="flex gap-1">
+                  <span className="size-1.5 rounded-full bg-muted-foreground/40 animate-bounce" style={{ animationDelay: '0ms' }} />
+                  <span className="size-1.5 rounded-full bg-muted-foreground/40 animate-bounce" style={{ animationDelay: '150ms' }} />
+                  <span className="size-1.5 rounded-full bg-muted-foreground/40 animate-bounce" style={{ animationDelay: '300ms' }} />
+                </div>
+              </div>
+            </div>
+          )}
 
-      {/* Close tab button (only after Breathy has responded) */}
-      {canClose && !loading && (
-        <div className="px-4 pb-2">
-          <Button
-            onClick={onConfirmEnd}
-            variant={bac >= 0.08 ? 'destructive' : 'default'}
-            className="w-full h-11 rounded-xl text-sm"
-          >
-            <ShieldCheck className="mr-2 size-4" />
-            I understand — close my tab
-          </Button>
+          {/* Quick replies */}
+          {showQuickReplies && (
+            <div className="flex flex-wrap gap-1.5 pt-1">
+              {quickReplies.map((text) => (
+                <button
+                  key={text}
+                  onClick={() => {
+                    setInput('');
+                    const userMsg: ChatMessage = { role: 'user', content: text };
+                    const updated = [...messages, userMsg];
+                    setMessages(updated);
+                    sendToBreathy(updated);
+                  }}
+                  className="rounded-full border bg-background px-2.5 py-1 text-[11px] font-medium text-muted-foreground hover:bg-muted transition-colors"
+                >
+                  {text}
+                </button>
+              ))}
+            </div>
+          )}
         </div>
-      )}
 
-      {/* Input bar */}
-      <div className="border-t bg-background px-4 py-3 pb-safe">
-        <div className="mx-auto flex max-w-md items-center gap-2">
-          <input
-            ref={inputRef}
-            type="text"
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            onKeyDown={handleKeyDown}
-            placeholder="Ask Breathy anything…"
-            disabled={loading}
-            className="flex-1 rounded-full border bg-muted/50 px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-primary/50 disabled:opacity-50"
-          />
-          <button
-            onClick={handleSend}
-            disabled={!input.trim() || loading}
-            className="flex size-10 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground disabled:opacity-50 transition-opacity"
-          >
-            {loading ? <Loader2 className="size-4 animate-spin" /> : <Send className="size-4" />}
-          </button>
+        {/* Close tab button */}
+        {canClose && !loading && (
+          <div className="px-3 pb-1.5">
+            <Button
+              onClick={onConfirmEnd}
+              variant={bac >= 0.08 ? 'destructive' : 'default'}
+              className="w-full h-9 rounded-xl text-xs"
+            >
+              <ShieldCheck className="mr-1.5 size-3.5" />
+              I understand — close my tab
+            </Button>
+          </div>
+        )}
+
+        {/* Input bar */}
+        <div className="border-t px-3 py-2.5">
+          <div className="flex items-center gap-2">
+            <input
+              ref={inputRef}
+              type="text"
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              onKeyDown={handleKeyDown}
+              placeholder="Ask Breathy anything…"
+              disabled={loading}
+              className="flex-1 rounded-full border bg-muted/50 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary/50 disabled:opacity-50"
+            />
+            <button
+              onClick={handleSend}
+              disabled={!input.trim() || loading}
+              className="flex size-9 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground disabled:opacity-50 transition-opacity"
+            >
+              {loading ? <Loader2 className="size-3.5 animate-spin" /> : <Send className="size-3.5" />}
+            </button>
+          </div>
         </div>
       </div>
     </div>

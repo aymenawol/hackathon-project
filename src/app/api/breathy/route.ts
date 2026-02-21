@@ -9,6 +9,10 @@ interface ChatMessage {
 }
 
 export async function POST(req: NextRequest) {
+  let parsedMessages: ChatMessage[] = [];
+  let parsedCtx: Record<string, unknown> = {};
+  let parsedFirstName = "friend";
+
   try {
     const body = await req.json();
     const {
@@ -32,6 +36,11 @@ export async function POST(req: NextRequest) {
 
     const ctx = sessionContext;
     const firstName = ctx.name?.split(" ")[0] || "friend";
+
+    // Save for catch-block fallback
+    parsedMessages = messages;
+    parsedCtx = ctx;
+    parsedFirstName = firstName;
 
     const drinkSummary = ctx.drinks
       .map((d) => `${d.name} (${d.volume_ml}ml, ${d.abv}% ABV)`)
@@ -92,11 +101,22 @@ RULES:
       ?? generateRuleBasedReply(messages, ctx, firstName);
 
     return NextResponse.json({ reply });
-  } catch (error) {
-    console.error("Breathy API error:", error);
-    return NextResponse.json({
-      reply: "Oops, Breathy glitched for a sec 😅 But real talk — make sure you have a safe ride home tonight. What else can I help with?",
-    });
+  } catch (error: unknown) {
+    console.error("Breathy API error:", error instanceof Error ? error.message : error);
+
+    // Fall back to rule-based reply instead of generic error
+    try {
+      const fallback = generateRuleBasedReply(
+        parsedMessages,
+        parsedCtx as Parameters<typeof generateRuleBasedReply>[1],
+        parsedFirstName
+      );
+      return NextResponse.json({ reply: fallback });
+    } catch {
+      return NextResponse.json({
+        reply: "Oops, Breathy glitched for a sec 😅 But real talk — make sure you have a safe ride home tonight. What else can I help with?",
+      });
+    }
   }
 }
 
