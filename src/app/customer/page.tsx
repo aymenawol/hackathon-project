@@ -1,7 +1,7 @@
  "use client";
 
 import { useEffect, useLayoutEffect, useState, useCallback, useRef } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
@@ -24,6 +24,7 @@ function getRiskDisplay(bac: number) {
 
 export default function CustomerPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   // ---- Onboarding state ----
   const [customerName, setCustomerName] = useState('');
   const [weightLbs, setWeightLbs] = useState(150);
@@ -84,6 +85,40 @@ export default function CustomerPage() {
       }
     })();
   }, [router]);
+
+  // ---- Open session when arriving via join URL (?joined=sessionId) ----
+  useEffect(() => {
+    const joinedId = searchParams.get('joined');
+    if (!joinedId || !userId) return;
+
+    (async () => {
+      const { data: sess, error: sErr } = await supabase
+        .from('sessions')
+        .select('*')
+        .eq('id', joinedId)
+        .eq('is_active', true)
+        .single();
+      if (sErr || !sess) return;
+
+      const { data: cust } = await supabase
+        .from('customers')
+        .select('*')
+        .eq('id', (sess as Session).customer_id)
+        .single();
+      if (!cust) return;
+
+      const { data: drinkRows } = await supabase
+        .from('drinks')
+        .select('*')
+        .eq('session_id', joinedId)
+        .order('ordered_at', { ascending: true });
+
+      setCustomer(cust as Customer);
+      setSession(sess as Session);
+      setDrinks((drinkRows ?? []) as Drink[]);
+      router.replace('/customer', { scroll: false });
+    })();
+  }, [searchParams, userId, router]);
 
   // ---- Join session via QR code scan ----
   async function joinSessionViaQR(sessionId: string) {
@@ -265,11 +300,13 @@ export default function CustomerPage() {
 
       console.log('Customer saved:', cust);
 
-      // 2. Create session
+      // 2. Create session with unique join URL token
+      const { generateJoinToken } = await import("@/lib/utils");
+      const join_token = generateJoinToken();
       console.log('Creating session for customer:', cust.id);
       const { data: sess, error: sErr } = await supabase
         .from('sessions')
-        .insert({ customer_id: cust.id })
+        .insert({ customer_id: cust.id, join_token })
         .select()
         .single();
       

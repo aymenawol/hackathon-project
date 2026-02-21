@@ -14,6 +14,8 @@ export interface Customer {
 export interface Session {
   id: string;
   customer_id: string;
+  /** Unique token for join URL; only someone with this link can join the session */
+  join_token?: string | null;
   started_at: string;
   ended_at: string | null;
   is_active: boolean;

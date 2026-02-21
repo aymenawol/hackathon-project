@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { supabase } from "@/lib/supabase";
 import { ActiveSession, Customer, Session, Drink } from "@/lib/types";
+import { generateJoinToken } from "@/lib/utils";
 
 /**
  * Hook that fetches all active sessions with their customers and drinks,
@@ -53,7 +54,16 @@ export function useActiveSessions() {
       drinksMap.set(d.session_id, arr);
     }
 
-    // 4. Combine
+    // 4. Backfill join_token for sessions that don't have one (e.g. created before feature)
+    for (const s of sessionRows as Session[]) {
+      if (!s.join_token) {
+        const token = generateJoinToken();
+        await supabase.from("sessions").update({ join_token: token }).eq("id", s.id);
+        (s as Session).join_token = token;
+      }
+    }
+
+    // 5. Combine
     const combined: ActiveSession[] = sessionRows
       .map((s: Session) => ({
         ...s,

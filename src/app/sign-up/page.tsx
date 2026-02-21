@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -9,6 +9,7 @@ import { Wine } from 'lucide-react';
 
 export default function SignUpPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [loading, setLoading] = useState(false);
   const [session, setSession] = useState<any | null>(null);
 
@@ -26,18 +27,22 @@ export default function SignUpPage() {
         const { data } = await supabase.auth.getSession();
         if (data?.session) {
           setSession(data.session);
-          // Redirect to customer page after OAuth
-          router.push('/customer');
+          const redirect = searchParams.get('redirect');
+          router.push(redirect && redirect.startsWith('/') ? redirect : '/customer');
         }
       } catch (err) {
         console.error('Auth error:', err);
       }
     })();
-  }, [router]);
+  }, [router, searchParams]);
 
   const handleSignIn = async () => {
     setLoading(true);
-    await supabase.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: window.location.origin + '/sign-up' } });
+    const redirect = searchParams.get('redirect');
+    const returnTo = redirect && redirect.startsWith('/')
+      ? `${window.location.origin}/sign-up?redirect=${encodeURIComponent(redirect)}`
+      : `${window.location.origin}/sign-up`;
+    await supabase.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: returnTo } });
     setLoading(false);
   };
 

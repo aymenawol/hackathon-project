@@ -10,6 +10,16 @@ import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { AddDrinkPanel } from "@/components/bartender/add-drink-panel";
 import { cn } from "@/lib/utils";
+import dynamic from "next/dynamic";
+
+const QRCode = dynamic(
+  () =>
+    import("qrcode.react").then((mod) => {
+      const Comp = mod?.QRCodeSVG ?? mod?.QRCodeCanvas ?? (() => null);
+      return { default: Comp };
+    }) as any,
+  { ssr: false }
+);
 
 
 interface SessionDetailProps {
@@ -198,6 +208,20 @@ export function SessionDetail({ session, onEndSession }: SessionDetailProps) {
           </div>
         </ScrollArea>
       </div>
+
+      {/* Unique join URL QR — bottom-left; customer scans to open link and join this session */}
+      {session.join_token && typeof window !== "undefined" && (
+        <div className="fixed bottom-6 left-6 z-40">
+          <Card className="border-2 p-2 shadow-lg">
+            <QRCode
+              value={`${window.location.origin}/customer/join/${session.join_token}`}
+              size={110}
+              level="H"
+              includeMargin={false}
+            />
+          </Card>
+        </div>
+      )}
     </div>
   );
 }
