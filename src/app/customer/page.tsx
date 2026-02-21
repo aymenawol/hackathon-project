@@ -47,9 +47,6 @@ function CustomerPageContent() {
   // Snapshot data for Breathy when user or bartender triggers end
   const [breathyData, setBreathyData] = useState<{ customer: Customer; drinks: Drink[]; hours: number } | null>(null);
 
-  // Track whether we've already sent the high-risk SMS for this session
-  const highRiskSentRef = useRef(false);
-
   // ---- Derived ----
   const bac = customer && drinks.length > 0
     ? estimateBAC(drinks, customer.weight_lbs, customer.gender)
@@ -59,29 +56,6 @@ function CustomerPageContent() {
   const hoursElapsed = session
     ? (Date.now() - new Date(session.started_at).getTime()) / (1000 * 60 * 60)
     : 0;
-
-  // ---- Send high-risk SMS when BAC enters danger zone ----
-  useEffect(() => {
-    if (bac < 0.04 || highRiskSentRef.current) return;
-    highRiskSentRef.current = true;
-    const name = customer?.name || 'Your friend';
-    const firstName = name.split(' ')[0];
-    (async () => {
-      const { error } = await supabase.from('sms_messages').insert({
-        phone_number: 'friend',
-        message: `⚠️ SOBR Alert: Your friend ${firstName} has reached a high estimated BAC (${bac.toFixed(3)}%). They may need your help getting home safely tonight. Please check in on them.`,
-        type: 'high-risk',
-        customer_name: name,
-      }).select();
-      if (error) console.error('[SOBR] high-risk insert FAILED:', error);
-      else console.log('[SOBR] high-risk insert OK');
-    })();
-  }, [bac, customer]);
-
-  // Reset high-risk flag when session changes
-  useEffect(() => {
-    highRiskSentRef.current = false;
-  }, [session?.id]);
 
   // ---- Load authenticated user info ----
   useEffect(() => {
@@ -201,18 +175,6 @@ function CustomerPageContent() {
       setCustomer(cust as Customer);
       setSession(sess as Session);
       setDrinks([]);
-
-      // Notify trusted friend that a session started
-      const firstName = (cust as Customer).name?.split(' ')[0] || 'Your friend';
-      supabase.from('sms_messages').insert({
-        phone_number: 'friend',
-        message: `📍 SOBR: ${firstName} just checked in at a bar and started a drinking session. We'll keep you updated on how they're doing tonight.`,
-        type: 'high-risk',
-        customer_name: (cust as Customer).name || 'Your friend',
-      }).select().then(({ error }) => {
-        if (error) console.error('[SOBR] session-start insert FAILED:', error);
-        else console.log('[SOBR] session-start insert OK');
-      });
     } catch (err) {
       console.error('Unexpected error:', err);
       alert(`Unexpected error: ${err instanceof Error ? err.message : String(err)}`);
@@ -403,28 +365,8 @@ function CustomerPageContent() {
     setShowBreathy(true);
   }
 
-  // ---- Send safety SMS to trusted friend ----
-  async function sendFriendSMS(type: 'high-risk' | 'session-ended') {
-    const name = customer?.name || 'Your friend';
-    const firstName = name.split(' ')[0];
-    const message = type === 'high-risk'
-      ? `⚠️ SOBR Alert: Your friend ${firstName} has reached a high estimated BAC. They may need your help getting home safely tonight. Please check in on them.`
-      : `🍻 SOBR: Your friend ${firstName} just ended their drinking session. Please make sure they get home safely — a quick call or text goes a long way!`;
-    const { error } = await supabase.from('sms_messages').insert({
-      phone_number: 'friend',
-      message,
-      type,
-      customer_name: name,
-    }).select();
-    if (error) console.error('[SOBR] SMS insert FAILED:', error);
-    else console.log('[SOBR] SMS insert OK:', type);
-  }
-
   // ---- Actually end session (called after Breathy confirmation) ----
   async function confirmEndSession() {
-    // Notify trusted friend that session ended
-    await sendFriendSMS('session-ended');
-
     if (session) {
       await supabase
         .from('sessions')
