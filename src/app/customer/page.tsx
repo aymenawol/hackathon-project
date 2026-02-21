@@ -62,23 +62,21 @@ function CustomerPageContent() {
 
   // ---- Send high-risk SMS when BAC enters danger zone ----
   useEffect(() => {
-    if (!customer || !session) return;
-    const risk = bacRiskLevel(bac);
-    if (risk === 'danger' && !highRiskSentRef.current) {
-      highRiskSentRef.current = true;
-      const firstName = customer.name.split(' ')[0];
-      console.log('[SOBR] Inserting high-risk SMS for', firstName, 'BAC:', bac);
-      supabase.from('sms_messages').insert({
-        phone_number: customer.emergency_phone || 'friend',
+    if (bac < 0.08 || highRiskSentRef.current) return;
+    highRiskSentRef.current = true;
+    const name = customer?.name || 'Your friend';
+    const firstName = name.split(' ')[0];
+    (async () => {
+      const { error } = await supabase.from('sms_messages').insert({
+        phone_number: 'friend',
         message: `⚠️ SOBR Alert: Your friend ${firstName} has reached a high estimated BAC (${bac.toFixed(3)}%). They may need your help getting home safely tonight. Please check in on them.`,
         type: 'high-risk',
-        customer_name: customer.name,
-      }).then(({ error, data }) => {
-        if (error) console.error('[SOBR] High-risk SMS insert FAILED:', error);
-        else console.log('[SOBR] High-risk SMS insert SUCCESS');
-      });
-    }
-  }, [bac, customer, session]);
+        customer_name: name,
+      }).select();
+      if (error) console.error('[SOBR] high-risk insert FAILED:', error);
+      else console.log('[SOBR] high-risk insert OK');
+    })();
+  }, [bac, customer]);
 
   // Reset high-risk flag when session changes
   useEffect(() => {
@@ -394,25 +392,20 @@ function CustomerPageContent() {
   }
 
   // ---- Send safety SMS to trusted friend ----
-  async function sendFriendSMS(type: 'high-risk' | 'session-ended', currentBac?: number) {
-    if (!customer) return;
-    const firstName = customer.name.split(' ')[0];
+  async function sendFriendSMS(type: 'high-risk' | 'session-ended') {
+    const name = customer?.name || 'Your friend';
+    const firstName = name.split(' ')[0];
     const message = type === 'high-risk'
-      ? `⚠️ SOBR Alert: Your friend ${firstName} has reached a high estimated BAC${currentBac !== undefined ? ` (${currentBac.toFixed(3)}%)` : ''}. They may need your help getting home safely tonight. Please check in on them.`
+      ? `⚠️ SOBR Alert: Your friend ${firstName} has reached a high estimated BAC. They may need your help getting home safely tonight. Please check in on them.`
       : `🍻 SOBR: Your friend ${firstName} just ended their drinking session. Please make sure they get home safely — a quick call or text goes a long way!`;
-    console.log('[SOBR] Inserting SMS type:', type, 'for', firstName);
-    try {
-      const { error } = await supabase.from('sms_messages').insert({
-        phone_number: customer.emergency_phone || 'friend',
-        message,
-        type,
-        customer_name: customer.name,
-      });
-      if (error) console.error('[SOBR] SMS insert FAILED:', error);
-      else console.log('[SOBR] SMS insert SUCCESS:', type);
-    } catch (err) {
-      console.error('[SOBR] SMS insert exception:', err);
-    }
+    const { error } = await supabase.from('sms_messages').insert({
+      phone_number: 'friend',
+      message,
+      type,
+      customer_name: name,
+    }).select();
+    if (error) console.error('[SOBR] SMS insert FAILED:', error);
+    else console.log('[SOBR] SMS insert OK:', type);
   }
 
   // ---- Actually end session (called after Breathy confirmation) ----
