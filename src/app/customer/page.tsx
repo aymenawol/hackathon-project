@@ -12,6 +12,7 @@ import { DRINK_MENU } from '@/lib/menu';
 import {
   Wine, Activity, User, LogOut, AlertTriangle, CheckCircle2, Info,
 } from 'lucide-react';
+import { BreathyModal } from '@/components/customer/breathy-modal';
 
 // ---- Risk badge helper (UI only) ----
 function getRiskDisplay(bac: number) {
@@ -35,6 +36,9 @@ export default function CustomerPage() {
   const [drinks, setDrinks] = useState<Drink[]>([]);
   const [loading, setLoading] = useState(false);
   const [activeTab, setActiveTab] = useState<'home' | 'drinks' | 'profile'>('home');
+  const [showBreathy, setShowBreathy] = useState(false);
+  // Snapshot data for Breathy when user or bartender triggers end
+  const [breathyData, setBreathyData] = useState<{ customer: Customer; drinks: Drink[]; hours: number } | null>(null);
 
   // ---- Derived ----
   const bac = customer && drinks.length > 0
@@ -168,13 +172,27 @@ export default function CustomerPage() {
     }
   }
 
-  // ---- End session ----
-  async function endSession() {
-    if (!session) return;
-    await supabase
-      .from('sessions')
-      .update({ is_active: false, ended_at: new Date().toISOString() })
-      .eq('id', session.id);
+  // ---- Trigger Breathy (called instead of ending directly) ----
+  function requestEndSession() {
+    if (!customer || !session) return;
+    setBreathyData({
+      customer,
+      drinks: [...drinks],
+      hours: (Date.now() - new Date(session.started_at).getTime()) / (1000 * 60 * 60),
+    });
+    setShowBreathy(true);
+  }
+
+  // ---- Actually end session (called after Breathy confirmation) ----
+  async function confirmEndSession() {
+    if (session) {
+      await supabase
+        .from('sessions')
+        .update({ is_active: false, ended_at: new Date().toISOString() })
+        .eq('id', session.id);
+    }
+    setShowBreathy(false);
+    setBreathyData(null);
     setSession(null);
     setCustomer(null);
     setDrinks([]);
@@ -212,11 +230,15 @@ export default function CustomerPage() {
         (payload) => {
           const updated = payload.new as Session;
           if (!updated.is_active) {
-            // Bartender ended the session
-            setSession(null);
-            setCustomer(null);
-            setDrinks([]);
-            setActiveTab('home');
+            // Bartender ended the session — show Breathy first
+            if (customer) {
+              setBreathyData({
+                customer,
+                drinks: [...drinks],
+                hours: (Date.now() - new Date(session.started_at).getTime()) / (1000 * 60 * 60),
+              });
+              setShowBreathy(true);
+            }
           }
         }
       )
@@ -450,7 +472,7 @@ export default function CustomerPage() {
             <Button
               variant="destructive"
               className="w-full mt-8 h-14 rounded-xl"
-              onClick={endSession}
+              onClick={requestEndSession}
             >
               <LogOut className="mr-2 size-5" />
               End Session
@@ -461,6 +483,16 @@ export default function CustomerPage() {
           </div>
         )}
       </div>
+
+      {/* Breathy Modal */}
+      {showBreathy && breathyData && (
+        <BreathyModal
+          customer={breathyData.customer}
+          drinks={breathyData.drinks}
+          hoursElapsed={breathyData.hours}
+          onConfirmEnd={confirmEndSession}
+        />
+      )}
 
       {/* Bottom Navigation Bar */}
       <div className="fixed bottom-0 left-0 right-0 z-50 border-t bg-background/80 backdrop-blur-lg pb-safe">
