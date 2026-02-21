@@ -8,6 +8,7 @@ import { Progress } from "@/components/ui/progress";
 import { Separator } from "@/components/ui/separator";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { AddDrinkPanel } from "@/components/bartender/add-drink-panel";
 import { cn } from "@/lib/utils";
 
 interface SessionDetailProps {
@@ -157,6 +158,11 @@ export function SessionDetail({ session, onEndSession }: SessionDetailProps) {
           </CardContent>
         </Card>
       </div>
+
+      <Separator />
+
+      {/* Add Drink */}
+      <AddDrinkPanel sessionId={session.id} />
 
       <Separator />
 
