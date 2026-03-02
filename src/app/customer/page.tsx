@@ -496,13 +496,13 @@ function CustomerPageContent() {
             </div>
           </div>
         )}
-      <main className="flex min-h-[100dvh] w-full flex-col items-center justify-center bg-background px-6">
-        <div className="w-full max-w-md space-y-8 text-center">
+      <main className="flex min-h-[100dvh] w-full flex-col items-center justify-start bg-background px-4 py-8 sm:justify-center sm:px-6 overflow-y-auto">
+        <div className="w-full max-w-md space-y-6 text-center sm:space-y-8">
           <div className="space-y-2">
-            <div className="mx-auto flex size-20 items-center justify-center rounded-full bg-primary/10">
-              <Wine className="size-10 text-primary" />
+            <div className="mx-auto flex size-16 items-center justify-center rounded-full bg-primary/10 sm:size-20">
+              <Wine className="size-8 text-primary sm:size-10" />
             </div>
-            <h1 className="text-3xl font-bold tracking-tight">SOBR</h1>
+            <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">SOBR</h1>
             <p className="text-muted-foreground">Your personal drinking companion</p>
           </div>
 
@@ -567,7 +567,7 @@ function CustomerPageContent() {
               <Button
                 onClick={() => setShowScanner(true)}
                 size="lg"
-                className="w-full rounded-full text-base h-14 mt-2"
+                className="w-full rounded-full text-base h-12 sm:h-14 mt-2"
                 disabled={!customerName.trim() || loading}
               >
                 {loading ? 'Starting…' : 'Scan QR to Join'}
@@ -584,16 +584,16 @@ function CustomerPageContent() {
   // ACTIVE SESSION SCREEN
   // ============================================================
   return (
-    <main className="flex min-h-[100dvh] w-full flex-col bg-muted/30 pb-20">
-      <div className="mx-auto w-full max-w-md flex-1 space-y-6 p-4 pt-8">
+    <main className="flex min-h-[100dvh] w-full flex-col bg-muted/30 pb-24">
+      <div className="mx-auto w-full max-w-md flex-1 space-y-4 p-3 pt-6 sm:space-y-6 sm:p-4 sm:pt-8">
 
         {/* Header */}
-        <header className="flex items-center justify-between px-2">
+        <header className="flex items-center justify-between px-1 sm:px-2">
           <div>
-            <p className="text-sm font-medium text-muted-foreground">
+            <p className="text-xs font-medium text-muted-foreground sm:text-sm">
               Hi, {customer?.name.split(' ')[0]}
             </p>
-            <h1 className="text-2xl font-bold tracking-tight">Your Session</h1>
+            <h1 className="text-xl font-bold tracking-tight sm:text-2xl">Your Session</h1>
           </div>
           <div className="flex flex-col items-end">
             <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Session</span>
@@ -613,8 +613,8 @@ function CustomerPageContent() {
               </div>
               <CardContent className="p-6">
                 <div className="flex flex-col items-center justify-center space-y-2">
-                  <span className="text-sm font-medium text-muted-foreground uppercase tracking-wider">Estimated BAC Range</span>
-                  <span className="text-4xl font-black tracking-tighter tabular-nums">
+                  <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider sm:text-sm">Estimated BAC Range</span>
+                  <span className="text-3xl font-black tracking-tighter tabular-nums sm:text-4xl">
                     {formatBACRange(bacRange)}
                   </span>
                   <span className="text-xs text-muted-foreground">Range accounts for absorption variance</span>
@@ -640,17 +640,17 @@ function CustomerPageContent() {
             </Card>
 
             {/* Quick Stats Grid */}
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-2 gap-3 sm:gap-4">
               <Card className="border-none shadow-sm">
-                <CardContent className="flex flex-col items-center justify-center p-6">
-                  <span className="text-sm font-medium text-muted-foreground mb-1">Drinks</span>
-                  <span className="text-4xl font-bold text-primary">{drinks.length}</span>
+                <CardContent className="flex flex-col items-center justify-center p-4 sm:p-6">
+                  <span className="text-xs font-medium text-muted-foreground mb-1 sm:text-sm">Drinks</span>
+                  <span className="text-3xl font-bold text-primary sm:text-4xl">{drinks.length}</span>
                 </CardContent>
               </Card>
               <Card className="border-none shadow-sm">
-                <CardContent className="flex flex-col items-center justify-center p-6">
-                  <span className="text-sm font-medium text-muted-foreground mb-1">Hours</span>
-                  <span className="text-4xl font-bold">{hoursElapsed.toFixed(1)}</span>
+                <CardContent className="flex flex-col items-center justify-center p-4 sm:p-6">
+                  <span className="text-xs font-medium text-muted-foreground mb-1 sm:text-sm">Hours</span>
+                  <span className="text-3xl font-bold sm:text-4xl">{hoursElapsed.toFixed(1)}</span>
                 </CardContent>
               </Card>
             </div>
@@ -788,27 +788,27 @@ function CustomerPageContent() {
       )}
 
       {/* Bottom Navigation Bar */}
-      <div className="fixed bottom-0 left-0 right-0 z-50 border-t bg-background/80 backdrop-blur-lg pb-safe">
-        <div className="mx-auto flex max-w-md items-center justify-around p-2">
+      <div className="fixed bottom-0 left-0 right-0 z-50 border-t bg-background/80 backdrop-blur-lg">
+        <div className="mx-auto flex max-w-md items-center justify-around p-1.5 pb-safe sm:p-2">
           <button
             onClick={() => setActiveTab('home')}
-            className={`flex flex-col items-center justify-center w-16 h-14 rounded-xl transition-colors ${activeTab === 'home' ? 'text-primary' : 'text-muted-foreground hover:bg-muted'}`}
+            className={`flex flex-col items-center justify-center w-16 h-12 rounded-xl transition-colors sm:h-14 ${activeTab === 'home' ? 'text-primary' : 'text-muted-foreground hover:bg-muted'}`}
           >
-            <Activity className="size-6 mb-1" />
+            <Activity className="size-5 mb-0.5 sm:size-6 sm:mb-1" />
             <span className="text-[10px] font-medium">Status</span>
           </button>
           <button
             onClick={() => setActiveTab('drinks')}
-            className={`flex flex-col items-center justify-center w-16 h-14 rounded-xl transition-colors ${activeTab === 'drinks' ? 'text-primary' : 'text-muted-foreground hover:bg-muted'}`}
+            className={`flex flex-col items-center justify-center w-16 h-12 rounded-xl transition-colors sm:h-14 ${activeTab === 'drinks' ? 'text-primary' : 'text-muted-foreground hover:bg-muted'}`}
           >
-            <Wine className="size-6 mb-1" />
+            <Wine className="size-5 mb-0.5 sm:size-6 sm:mb-1" />
             <span className="text-[10px] font-medium">Drinks</span>
           </button>
           <button
             onClick={() => setActiveTab('profile')}
-            className={`flex flex-col items-center justify-center w-16 h-14 rounded-xl transition-colors ${activeTab === 'profile' ? 'text-primary' : 'text-muted-foreground hover:bg-muted'}`}
+            className={`flex flex-col items-center justify-center w-16 h-12 rounded-xl transition-colors sm:h-14 ${activeTab === 'profile' ? 'text-primary' : 'text-muted-foreground hover:bg-muted'}`}
           >
-            <User className="size-6 mb-1" />
+            <User className="size-5 mb-0.5 sm:size-6 sm:mb-1" />
             <span className="text-[10px] font-medium">Profile</span>
           </button>
         </div>

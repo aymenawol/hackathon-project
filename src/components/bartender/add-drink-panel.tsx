@@ -43,13 +43,13 @@ export function AddDrinkPanel({ sessionId }: AddDrinkPanelProps) {
       <h3 className="text-sm font-semibold tracking-tight">Add Drink</h3>
 
       {/* Category tabs */}
-      <div className="flex gap-1 rounded-lg border bg-muted/50 p-1">
+      <div className="flex gap-1 rounded-lg border bg-muted/50 p-1 overflow-x-auto">
         {DRINK_CATEGORIES.map((cat) => (
           <button
             key={cat}
             onClick={() => setActiveCategory(cat)}
             className={cn(
-              "flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-colors",
+              "flex items-center gap-1 whitespace-nowrap rounded-md px-2.5 py-1.5 text-xs font-medium transition-colors sm:gap-1.5 sm:px-3",
               activeCategory === cat
                 ? "bg-background text-foreground shadow-sm"
                 : "text-muted-foreground hover:text-foreground"
@@ -62,7 +62,7 @@ export function AddDrinkPanel({ sessionId }: AddDrinkPanelProps) {
       </div>
 
       {/* Drink grid */}
-      <div className="grid grid-cols-3 gap-2 sm:grid-cols-4 lg:grid-cols-5">
+      <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
         {filteredDrinks.map((drink) => {
           const isLoading = adding === drink.id;
           return (

@@ -103,20 +103,20 @@ export function ImpairmentCheckModal({
   const allSelectedDone = hasSelectedTests && Array.from(selected).every((t) => testsDone.has(t));
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-      <div className="w-full max-w-lg rounded-2xl border bg-background shadow-2xl overflow-hidden">
+    <div className="fixed inset-0 z-[100] flex items-end justify-center bg-black/50 backdrop-blur-sm sm:items-center sm:p-4">
+      <div className="w-full max-h-[90dvh] sm:max-w-lg rounded-t-2xl sm:rounded-2xl border bg-background shadow-2xl overflow-hidden flex flex-col">
         {/* Header */}
-        <div className="px-6 py-5 border-b">
-          <h2 className="text-xl font-bold tracking-tight">
+        <div className="px-4 py-4 border-b sm:px-6 sm:py-5">
+          <h2 className="text-lg font-bold tracking-tight sm:text-xl">
             Before You Close Out — Run an AI Impairment Check
           </h2>
-          <p className="text-sm text-muted-foreground mt-1">
+          <p className="text-xs text-muted-foreground mt-1 sm:text-sm">
             Choose at least one check to assess your performance-based impairment risk.
           </p>
         </div>
 
         {/* Check Options */}
-        <div className="px-6 py-4 space-y-3">
+        <div className="px-4 py-3 space-y-2 overflow-y-auto flex-1 sm:px-6 sm:py-4 sm:space-y-3">
           {CHECK_OPTIONS.map((option) => {
             const isSelected = selected.has(option.type);
             const isDone = testsDone.has(option.type);
@@ -136,9 +136,9 @@ export function ImpairmentCheckModal({
                 }`}
                 onClick={() => toggleSelection(option.type)}
               >
-                <CardContent className="flex items-center gap-4 p-4">
+                <CardContent className="flex items-center gap-3 p-3 sm:gap-4 sm:p-4">
                   <div
-                    className={`flex size-14 shrink-0 items-center justify-center rounded-xl ${
+                    className={`flex size-10 shrink-0 items-center justify-center rounded-xl sm:size-14 ${
                       isDone
                         ? 'bg-emerald-500/10 text-emerald-500'
                         : isSelected
@@ -146,7 +146,7 @@ export function ImpairmentCheckModal({
                         : 'bg-muted text-muted-foreground'
                     }`}
                   >
-                    {isDone ? <CheckCircle2 className="size-8" /> : option.icon}
+                    {isDone ? <CheckCircle2 className="size-6 sm:size-8" /> : option.icon}
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
@@ -194,7 +194,7 @@ export function ImpairmentCheckModal({
         </div>
 
         {/* Actions */}
-        <div className="px-6 py-4 border-t flex items-center justify-between gap-3">
+        <div className="px-4 py-3 border-t flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between sm:gap-3 sm:px-6 sm:py-4">
           <Button variant="ghost" onClick={onCancel} className="text-muted-foreground">
             Skip for now
           </Button>

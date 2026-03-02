@@ -5,7 +5,7 @@ import { useActiveSessions } from "@/hooks/use-active-sessions";
 import { CustomerSidebar } from "@/components/bartender/customer-sidebar";
 import { SessionDetail } from "@/components/bartender/session-detail";
 import { Button } from "@/components/ui/button";
-import { QrCode, X } from "lucide-react";
+import { QrCode, X, Menu, ChevronLeft } from "lucide-react";
 import dynamic from "next/dynamic";
 
 const QRCode = dynamic(
@@ -28,6 +28,7 @@ export default function BartenderPage() {
   const [showQR, setShowQR] = useState(false);
   const [qrJoinToken, setQrJoinToken] = useState<string | null>(null);
   const [qrLoading, setQrLoading] = useState(false);
+  const [showSidebar, setShowSidebar] = useState(false);
 
   const selectedSession =
     sessions.find((s) => s.id === selectedId) ?? sessions[0] ?? null;
@@ -69,41 +70,72 @@ export default function BartenderPage() {
   }
 
   return (
-    <div className="relative flex h-screen overflow-hidden">
+    <div className="relative flex h-[100dvh] overflow-hidden">
+      {/* Mobile sidebar overlay */}
+      {showSidebar && (
+        <div
+          className="fixed inset-0 z-30 bg-black/40 md:hidden"
+          onClick={() => setShowSidebar(false)}
+        />
+      )}
+
       {/* Sidebar */}
-      <CustomerSidebar
-        sessions={sessions}
-        selectedId={effectiveId}
-        onSelect={setSelectedId}
-      />
+      <div className={`fixed inset-y-0 left-0 z-40 w-72 transform transition-transform duration-200 md:relative md:translate-x-0 ${
+        showSidebar ? 'translate-x-0' : '-translate-x-full'
+      }`}>
+        <CustomerSidebar
+          sessions={sessions}
+          selectedId={effectiveId}
+          onSelect={(id) => {
+            setSelectedId(id);
+            setShowSidebar(false);
+          }}
+        />
+      </div>
 
       {/* Main content */}
-      {selectedSession ? (
-        <SessionDetail
-          key={selectedSession.id}
-          session={selectedSession}
-          onEndSession={endSession}
-        />
-      ) : (
-        <div className="flex flex-1 items-center justify-center">
-          <div className="text-center">
-            <h2 className="text-lg font-semibold">No active sessions</h2>
-            <p className="mt-1 text-sm text-muted-foreground">
-              Waiting for customers to check in…
-            </p>
-          </div>
+      <div className="flex flex-1 flex-col min-w-0">
+        {/* Mobile header */}
+        <div className="flex items-center gap-2 border-b px-3 py-2 md:hidden">
+          <button onClick={() => setShowSidebar(true)} className="p-1.5 rounded-lg hover:bg-muted">
+            <Menu className="size-5" />
+          </button>
+          <span className="text-sm font-semibold truncate flex-1">
+            {selectedSession ? selectedSession.customer.name : 'SOBR Bartender'}
+          </span>
+          <span className="text-xs text-muted-foreground">
+            {sessions.length} session{sessions.length !== 1 ? 's' : ''}
+          </span>
         </div>
-      )}
+
+        {selectedSession ? (
+          <SessionDetail
+            key={selectedSession.id}
+            session={selectedSession}
+            onEndSession={endSession}
+          />
+        ) : (
+          <div className="flex flex-1 items-center justify-center p-4">
+            <div className="text-center">
+              <h2 className="text-lg font-semibold">No active sessions</h2>
+              <p className="mt-1 text-sm text-muted-foreground">
+                Waiting for customers to check in…
+              </p>
+            </div>
+          </div>
+        )}
+      </div>
 
       {/* Fixed QR code button — bottom-left: creates a new pending session and shows its unique join URL */}
       <Button
         onClick={handleShowQR}
         size="lg"
-        className="fixed bottom-6 left-6 z-40 gap-2 rounded-full shadow-lg"
+        className="fixed bottom-4 left-4 z-40 gap-2 rounded-full shadow-lg sm:bottom-6 sm:left-6"
         disabled={qrLoading}
       >
         <QrCode className="size-5" />
-        Show QR Code
+        <span className="hidden sm:inline">Show QR Code</span>
+        <span className="sm:hidden">QR</span>
       </Button>
 
       {/* QR overlay: session is created when this opens; customer scanning the QR "starts" and joins that session */}
@@ -113,7 +145,7 @@ export default function BartenderPage() {
           onClick={handleCloseQR}
         >
           <div
-            className="relative flex flex-col items-center gap-6 rounded-2xl border bg-card p-10 shadow-2xl"
+            className="relative flex flex-col items-center gap-4 rounded-2xl border bg-card p-6 shadow-2xl mx-4 max-w-md w-full sm:gap-6 sm:p-10 sm:mx-0"
             onClick={(e) => e.stopPropagation()}
           >
             <button
@@ -137,8 +169,8 @@ export default function BartenderPage() {
               </div>
             ) : qrJoinToken ? (
               <>
-                <div className="rounded-xl border-2 bg-white p-4">
-                  <QRCode value={joinUrl} size={280} level="H" includeMargin />
+                <div className="rounded-xl border-2 bg-white p-3 sm:p-4">
+                  <QRCode value={joinUrl} size={220} level="H" includeMargin />
                 </div>
                 <p className="text-xs text-muted-foreground select-all break-all max-w-xs text-center">
                   {joinUrl}

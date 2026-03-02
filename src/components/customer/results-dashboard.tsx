@@ -110,15 +110,15 @@ export function ResultsDashboard({
   const riskDisplay = getRiskDisplay(assessment.impairmentRiskLevel);
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-      <div className="w-full max-w-lg rounded-2xl border bg-background shadow-2xl overflow-hidden max-h-[90vh] flex flex-col">
+    <div className="fixed inset-0 z-[100] flex items-end justify-center bg-black/50 backdrop-blur-sm sm:items-center sm:p-4">
+      <div className="w-full max-h-[92dvh] sm:max-w-lg rounded-t-2xl sm:rounded-2xl border bg-background shadow-2xl overflow-hidden flex flex-col">
         {/* Header */}
-        <div className={`px-6 py-5 ${riskDisplay.bg} border-b flex items-center justify-between`}>
-          <div className="flex items-center gap-3">
+        <div className={`px-4 py-4 ${riskDisplay.bg} border-b flex items-center justify-between sm:px-6 sm:py-5`}>
+          <div className="flex items-center gap-2 sm:gap-3">
             {riskDisplay.icon}
             <div>
-              <h2 className="text-lg font-bold">Impairment Check Results</h2>
-              <p className={`text-sm font-semibold ${riskDisplay.color}`}>
+              <h2 className="text-base font-bold sm:text-lg">Impairment Check Results</h2>
+              <p className={`text-xs font-semibold ${riskDisplay.color} sm:text-sm`}>
                 Performance-Based Impairment Risk: {riskDisplay.label}
               </p>
             </div>
@@ -129,7 +129,7 @@ export function ResultsDashboard({
         </div>
 
         {/* Scrollable Content */}
-        <div className="flex-1 overflow-y-auto px-6 py-4 space-y-4">
+        <div className="flex-1 overflow-y-auto px-4 py-3 space-y-3 sm:px-6 sm:py-4 sm:space-y-4">
           {/* Overall Risk Score */}
           <Card className={`border ${riskDisplay.border}`}>
             <CardContent className="p-4">
@@ -220,7 +220,7 @@ export function ResultsDashboard({
           )}
 
           {/* Talk to AI button */}
-          <Button onClick={onTalkToAI} className="w-full h-12 rounded-xl" size="lg">
+          <Button onClick={onTalkToAI} className="w-full h-11 rounded-xl sm:h-12" size="lg">
             <MessageCircle className="mr-2 size-5" />
             Talk to AI About My Results
           </Button>

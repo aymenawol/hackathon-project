@@ -114,8 +114,8 @@ export function BreathyModal({ customer, drinks, hoursElapsed, onConfirmEnd }: B
 
   return (
     <div className="fixed inset-0 z-[100] flex items-end justify-center bg-black/40 backdrop-blur-sm">
-      {/* Popup card anchored to bottom, max height 70vh */}
-      <div className="w-full max-w-md mx-4 mb-4 flex flex-col overflow-hidden rounded-2xl border bg-background shadow-2xl" style={{ maxHeight: '70vh' }}>
+      {/* Popup card anchored to bottom, max height 80dvh */}
+      <div className="w-full max-w-md mx-2 mb-2 flex flex-col overflow-hidden rounded-2xl border bg-background shadow-2xl sm:mx-4 sm:mb-4" style={{ maxHeight: '80dvh' }}>
         {/* Header */}
         <div className="flex items-center gap-3 border-b px-4 py-3">
           <div className="flex size-9 items-center justify-center rounded-full bg-primary/10">

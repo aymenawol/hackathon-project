@@ -150,10 +150,10 @@ export function FloatingChatbot({ customer, drinks, hoursElapsed, assessment }: 
       {!isOpen && (
         <button
           onClick={openChat}
-          className="fixed bottom-24 right-4 z-[90] flex size-14 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-105 active:scale-95"
+          className="fixed bottom-20 right-3 z-[90] flex size-12 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-105 active:scale-95 sm:bottom-24 sm:right-4 sm:size-14"
           aria-label="Open AI Assistant"
         >
-          <MessageCircle className="size-6" />
+          <MessageCircle className="size-5 sm:size-6" />
           {/* Notification dot when there's assessment data */}
           {assessment && (
             <span className="absolute -top-1 -right-1 size-4 rounded-full bg-rose-500 border-2 border-background" />
@@ -163,8 +163,8 @@ export function FloatingChatbot({ customer, drinks, hoursElapsed, assessment }: 
 
       {/* Chat Panel */}
       {isOpen && (
-        <div className="fixed bottom-24 right-4 z-[95] w-[calc(100vw-2rem)] max-w-sm">
-          <div className="flex flex-col rounded-2xl border bg-background shadow-2xl overflow-hidden" style={{ maxHeight: '60vh' }}>
+        <div className="fixed inset-x-0 bottom-16 z-[95] px-2 sm:inset-x-auto sm:bottom-24 sm:right-4 sm:px-0 sm:w-[calc(100vw-2rem)] sm:max-w-sm">
+          <div className="flex flex-col rounded-2xl border bg-background shadow-2xl overflow-hidden" style={{ maxHeight: '55dvh' }}>
             {/* Header */}
             <div className="flex items-center gap-3 border-b px-4 py-3">
               <div className="flex size-8 items-center justify-center rounded-full bg-primary/10">

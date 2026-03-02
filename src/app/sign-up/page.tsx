@@ -65,13 +65,13 @@ function SignUpPageContent() {
   };
 
   return (
-    <main className="flex min-h-[100dvh] w-full flex-col items-center justify-center bg-background px-6">
-      <div className="w-full max-w-md space-y-8 text-center">
+    <main className="flex min-h-[100dvh] w-full flex-col items-center justify-center bg-background px-4 sm:px-6">
+      <div className="w-full max-w-md space-y-6 text-center sm:space-y-8">
         <div className="space-y-2">
-          <div className="mx-auto flex size-20 items-center justify-center rounded-full bg-primary/10">
-            <Wine className="size-10 text-primary" />
+          <div className="mx-auto flex size-16 items-center justify-center rounded-full bg-primary/10 sm:size-20">
+            <Wine className="size-8 text-primary sm:size-10" />
           </div>
-          <h1 className="text-3xl font-bold tracking-tight">SOBR</h1>
+          <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">SOBR</h1>
           <p className="text-muted-foreground">Your personal drinking companion</p>
         </div>
 

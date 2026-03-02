@@ -43,15 +43,15 @@ export function SessionDetail({ session, onEndSession }: SessionDetailProps) {
   const bacPercent = Math.min((bac / 0.15) * 100, 100);
 
   return (
-    <div className="relative flex flex-1 flex-col gap-4 overflow-hidden p-6">
+    <div className="relative flex flex-1 flex-col gap-3 overflow-y-auto p-3 sm:gap-4 sm:p-6">
       {/* Header with QR Code */}
-      <div className="flex items-start justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight">
+      <div className="flex items-start justify-between gap-2">
+        <div className="min-w-0">
+          <h1 className="text-lg font-semibold tracking-tight truncate sm:text-2xl">
             {customer.name}
           </h1>
-          <p className="text-sm text-muted-foreground">
-            Session started {formatTime(session.started_at)} ·{" "}
+          <p className="text-xs text-muted-foreground sm:text-sm">
+            Started {formatTime(session.started_at)} ·{" "}
             {customer.weight_lbs} lbs · {customer.gender}
           </p>
         </div>
@@ -67,7 +67,7 @@ export function SessionDetail({ session, onEndSession }: SessionDetailProps) {
       </div>
 
       {/* Stats Row */}
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-3 gap-2 sm:gap-4">
         {/* BAC Card */}
         <Card
           className={cn(
@@ -75,16 +75,16 @@ export function SessionDetail({ session, onEndSession }: SessionDetailProps) {
             risk === "caution" && "border-yellow-500"
           )}
         >
-          <CardHeader className="pb-2">
-            <CardTitle className="text-xs font-medium text-muted-foreground">
+          <CardHeader className="pb-1 sm:pb-2">
+            <CardTitle className="text-[10px] font-medium text-muted-foreground sm:text-xs">
               Estimated BAC
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="flex items-end gap-2">
+            <div className="flex flex-col gap-1 sm:flex-row sm:items-end sm:gap-2">
               <span
                 className={cn(
-                  "text-3xl font-bold tabular-nums",
+                  "text-xl font-bold tabular-nums sm:text-3xl",
                   risk === "danger" && "text-destructive",
                   risk === "caution" && "text-yellow-600"
                 )}
@@ -121,13 +121,13 @@ export function SessionDetail({ session, onEndSession }: SessionDetailProps) {
 
         {/* Total Drinks */}
         <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-xs font-medium text-muted-foreground">
+          <CardHeader className="pb-1 sm:pb-2">
+            <CardTitle className="text-[10px] font-medium text-muted-foreground sm:text-xs">
               Total Drinks
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <span className="text-3xl font-bold tabular-nums">
+            <span className="text-xl font-bold tabular-nums sm:text-3xl">
               {drinks.length}
             </span>
             <p className="mt-1 text-xs text-muted-foreground">
@@ -138,13 +138,13 @@ export function SessionDetail({ session, onEndSession }: SessionDetailProps) {
 
         {/* Session Duration */}
         <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-xs font-medium text-muted-foreground">
+          <CardHeader className="pb-1 sm:pb-2">
+            <CardTitle className="text-[10px] font-medium text-muted-foreground sm:text-xs">
               Session Duration
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <span className="text-3xl font-bold tabular-nums">
+            <span className="text-xl font-bold tabular-nums sm:text-3xl">
               {(() => {
                 const mins = Math.floor(
                   (Date.now() - new Date(session.started_at).getTime()) /
@@ -170,7 +170,7 @@ export function SessionDetail({ session, onEndSession }: SessionDetailProps) {
       <Separator />
 
       {/* Drink History */}
-      <div className="flex flex-col gap-2 overflow-hidden">
+      <div className="flex flex-col gap-2 overflow-hidden min-h-0 flex-1">
         <h2 className="text-sm font-semibold tracking-tight">Drink History</h2>
         <ScrollArea className="flex-1">
           <div className="space-y-2 pb-4">
