@@ -21,6 +21,7 @@ import {
 import { ImpairmentCheckModal } from '@/components/customer/impairment-check-modal';
 import { ResultsDashboard } from '@/components/customer/results-dashboard';
 import { FloatingChatbot } from '@/components/customer/floating-chatbot';
+import { FocusCheck } from '@/components/customer/focus-check';
 
 // ---- Risk badge helper (UI only) ----
 function getRiskDisplay(bac: number) {
@@ -53,6 +54,8 @@ function CustomerPageContent() {
   // ---- Impairment check flow state ----
   const [showImpairmentModal, setShowImpairmentModal] = useState(false);
   const [showResultsDashboard, setShowResultsDashboard] = useState(false);
+  const [showFocusCheck, setShowFocusCheck] = useState(false);
+  const [focusCheckCallback, setFocusCheckCallback] = useState<((r: ImpairmentResult) => void) | null>(null);
   const [riskAssessment, setRiskAssessment] = useState<RiskAssessment | null>(null);
   const [projectedMinutes, setProjectedMinutes] = useState<number | undefined>(undefined);
 
@@ -764,6 +767,25 @@ function CustomerPageContent() {
         <ImpairmentCheckModal
           onComplete={handleImpairmentComplete}
           onCancel={handleSkipImpairment}
+          onRunFocusCheck={(onResultCb) => {
+            setFocusCheckCallback(() => onResultCb);
+            setShowFocusCheck(true);
+          }}
+        />
+      )}
+
+      {/* Focus Check (Eye Tracking) */}
+      {showFocusCheck && focusCheckCallback && (
+        <FocusCheck
+          onResult={(result) => {
+            focusCheckCallback(result);
+            setShowFocusCheck(false);
+            setFocusCheckCallback(null);
+          }}
+          onCancel={() => {
+            setShowFocusCheck(false);
+            setFocusCheckCallback(null);
+          }}
         />
       )}
 
