@@ -1,0 +1,195 @@
+CRITICAL STRUCTURAL CHANGE
+REMOVE: Auto-popup AI chatbot when session ends.
+ADD: When user ends session → show a modal screen:
+  Title: "Before You Close Out — Run an AI Impairment Check"
+  Display 3 options:
+    Stability Check
+    Reaction Check
+    Focus Check (Camera-based eye tracking)
+  User must choose at least one to proceed.
+  After test completion:
+    Compute Impairment Risk Score
+    Show results dashboard
+    Provide button: "Talk to AI About My Results"
+  Chatbot is accessible via:
+    Floating circular button (bottom-right)
+    Available at all times
+    Context-aware
+
+DATA MODEL UPDATES
+Create or update these structures:
+
+UserProfile
+  age: number
+  weight: number
+  biologicalSex: string
+  baselineReactionTime: number
+  baselineStabilityVariance: number
+  baselineFocusScore: number
+  avgEliminationRate: number (start default 0.015 BAC/hr)
+  sessionHistory: array
+
+DrinkEvent
+  timestamp
+  drinkType
+  estimatedAlcoholGrams
+
+Session
+  startTime
+  endTime
+  drinks: DrinkEvent[]
+  estimatedBACRange
+  impairmentChecks: ImpairmentResult[]
+  finalRiskScore
+  confidenceScore
+
+ImpairmentResult
+  type: "stability" | "reaction" | "focus"
+  rawMetrics
+  baselineDelta
+  impairmentContributionScore
+
+ESTIMATED BAC ENGINE
+Implement Widmark-based BAC estimation originally developed by Erik Widmark.
+BUT:
+  Output must be a RANGE, not a single value.
+  Example:
+    estimatedBACLow
+    estimatedBACHigh
+  Add variability buffer: ±20–30% absorption variance
+  Never return: "Your BAC is 0.08"
+  Always return: "Estimated BAC Range: 0.06–0.10"
+
+AI IMPAIRMENT CHECKS
+
+1. Stability Check
+  Instructions:
+    User holds phone to chest or places in pocket.
+    Collect accelerometer + gyroscope data for 15 seconds.
+    Compute:
+      Sway amplitude variance
+      Drift frequency
+      Micro-oscillation irregularity
+    Compare to: UserProfile.baselineStabilityVariance
+    Return:
+      stabilityDeltaPercent
+      impairmentContributionScore
+
+2. Reaction Check
+  20-second dual-task test:
+    Tap screen when color changes
+    Randomized interval
+    Optional simple memory task
+  Measure:
+    Average reaction time
+    Miss rate
+    Variance
+  Compare to: baselineReactionTime
+  Return:
+    reactionSlowdownPercent
+    impairmentContributionScore
+
+3. Focus Check (Camera)
+  Use front camera for 10 seconds.
+  Track:
+    Facial landmarks
+    Eye tracking smoothness
+    Head sway drift
+  Measure:
+    Smooth pursuit stability
+    Tracking jitter variance
+    Drift deviation
+  Compare to: baselineFocusScore
+  Return:
+    focusDeltaPercent
+    impairmentContributionScore
+
+IMPAIRMENT RISK CALCULATION
+FinalRiskScore = weighted fusion of:
+  Estimated BAC midpoint
+  Stability impairment score
+  Reaction impairment score
+  Focus impairment score
+
+Use weighted model:
+  If only 1 test taken: ConfidenceScore = low (40–60%)
+  If 2 tests: ConfidenceScore = medium (60–80%)
+  If 3 tests: ConfidenceScore = high (80–95%)
+
+Output:
+  ImpairmentRiskLevel:
+    Low
+    Elevated
+    High
+    Severe
+
+NEVER output:
+  "Legally drunk"
+  "Safe to drive"
+
+Always frame as:
+  "Performance-based impairment risk"
+
+PERSONAL BASELINE LEARNING
+After each session:
+  If user confirms: "Were you feeling impaired?"
+  Use reinforcement adjustment:
+    Update:
+      baselineReactionTime
+      baselineStabilityVariance
+      eliminationRate adjustment
+  Apply exponential moving average for personalization.
+
+PREDICTIVE MODELING
+Add function: predictTimeToHighRisk()
+  Inputs:
+    currentBACTrend
+    drink velocity
+    user elimination rate
+    past session patterns
+  Output:
+    "Projected High Impairment in ~42 minutes"
+  Display on dashboard.
+
+CHATBOT ROLE
+The AI assistant must:
+  Have access to:
+    Current session data
+    Past sessions
+    User profile
+  Capabilities:
+    Interpret results
+    Explain impairment changes
+    Suggest hydration pacing
+    Highlight personal patterns
+    Compare to historical sessions
+  The chatbot is NOT:
+    A legal authority
+    A medical advisor
+    A replacement for impairment checks
+
+UI REQUIREMENTS
+Session End Flow
+  Screen layout:
+    Header: "Run an AI Impairment Check"
+    3 large selectable cards.
+  After completion:
+    Results Dashboard:
+      Display:
+        Estimated BAC Range
+        Stability Score
+        Reaction Score
+        Focus Score
+        Impairment Risk Level
+        Confidence Level
+      Button: "Talk to AI About My Results"
+
+LEGAL & SAFETY LANGUAGE REQUIREMENTS
+Add disclaimer footer on results page:
+  "Estimates are based on behavioral modeling and population averages. Individual variation applies. This is not a legal determination of sobriety."
+
+Do NOT use:
+  Field Sobriety Test terminology
+
+Do NOT claim:
+  Breathalyzer equivalence.

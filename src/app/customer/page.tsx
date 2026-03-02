@@ -8,12 +8,19 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { supabase } from '@/lib/supabase';
 import { estimateBAC, bacRiskLevel, formatBAC } from '@/lib/bac';
+import { estimateBACRange, formatBACRange } from '@/lib/bac-range';
+import { computeImpairmentRisk } from '@/lib/impairment-risk';
+import { predictTimeToHighRisk, formatPrediction } from '@/lib/predictive';
+import { loadUserProfile, saveUserProfile, updateBaselines } from '@/lib/baseline-learning';
+import { ImpairmentResult, RiskAssessment, DEFAULT_USER_PROFILE } from '@/lib/impairment-types';
 import { Customer, Session, Drink } from '@/lib/types';
 import { DRINK_MENU } from '@/lib/menu';
 import {
   Wine, Activity, User, LogOut, AlertTriangle, CheckCircle2, Info,
 } from 'lucide-react';
-import { BreathyModal } from '@/components/customer/breathy-modal';
+import { ImpairmentCheckModal } from '@/components/customer/impairment-check-modal';
+import { ResultsDashboard } from '@/components/customer/results-dashboard';
+import { FloatingChatbot } from '@/components/customer/floating-chatbot';
 
 // ---- Risk badge helper (UI only) ----
 function getRiskDisplay(bac: number) {
@@ -43,19 +50,27 @@ function CustomerPageContent() {
   const [drinks, setDrinks] = useState<Drink[]>([]);
   const [loading, setLoading] = useState(false);
   const [activeTab, setActiveTab] = useState<'home' | 'drinks' | 'profile'>('home');
-  const [showBreathy, setShowBreathy] = useState(false);
-  // Snapshot data for Breathy when user or bartender triggers end
-  const [breathyData, setBreathyData] = useState<{ customer: Customer; drinks: Drink[]; hours: number } | null>(null);
+  // ---- Impairment check flow state ----
+  const [showImpairmentModal, setShowImpairmentModal] = useState(false);
+  const [showResultsDashboard, setShowResultsDashboard] = useState(false);
+  const [riskAssessment, setRiskAssessment] = useState<RiskAssessment | null>(null);
+  const [projectedMinutes, setProjectedMinutes] = useState<number | undefined>(undefined);
 
   // ---- Derived ----
   const bac = customer && drinks.length > 0
     ? estimateBAC(drinks, customer.weight_lbs, customer.gender)
     : 0;
+  const bacRange = customer && drinks.length > 0
+    ? estimateBACRange(drinks, customer.weight_lbs, customer.gender)
+    : { estimatedBACLow: 0, estimatedBACHigh: 0, midpoint: 0 };
   const riskInfo = getRiskDisplay(bac);
   const bacPercent = Math.min((bac / 0.15) * 100, 100);
   const hoursElapsed = session
     ? (Date.now() - new Date(session.started_at).getTime()) / (1000 * 60 * 60)
     : 0;
+  const prediction = customer && drinks.length > 0
+    ? predictTimeToHighRisk(bacRange, drinks, loadUserProfile()?.avgEliminationRate)
+    : -1;
 
   // ---- Load authenticated user info ----
   useEffect(() => {
@@ -354,31 +369,64 @@ function CustomerPageContent() {
     }
   }
 
-  // ---- Trigger Breathy (called instead of ending directly) ----
+  // ---- Trigger impairment check modal (called instead of ending directly) ----
   function requestEndSession() {
     if (!customer || !session) return;
-    setBreathyData({
-      customer,
-      drinks: [...drinks],
-      hours: (Date.now() - new Date(session.started_at).getTime()) / (1000 * 60 * 60),
-    });
-    setShowBreathy(true);
+    setShowImpairmentModal(true);
   }
 
-  // ---- Actually end session (called after Breathy confirmation) ----
+  // ---- Handle impairment check completion → show results ----
+  function handleImpairmentComplete(results: ImpairmentResult[]) {
+    const assessment = computeImpairmentRisk(bacRange, results);
+    const minutes = predictTimeToHighRisk(bacRange, drinks, loadUserProfile()?.avgEliminationRate);
+    setRiskAssessment(assessment);
+    setProjectedMinutes(minutes >= 0 ? minutes : undefined);
+    setShowImpairmentModal(false);
+    setShowResultsDashboard(true);
+  }
+
+  // ---- Handle skipping impairment checks ----
+  function handleSkipImpairment() {
+    setShowImpairmentModal(false);
+    confirmEndSession();
+  }
+
+  // ---- Actually end session ----
   async function confirmEndSession() {
+    // Save baseline learning if we have assessment results
+    if (riskAssessment && customer && session) {
+      const profile = loadUserProfile() || { ...DEFAULT_USER_PROFILE, weight: customer.weight_lbs, biologicalSex: customer.gender };
+      const updated = updateBaselines(
+        profile,
+        riskAssessment.checks,
+        bacRange,
+        hoursElapsed,
+        false // default: not self-reported impaired
+      );
+      saveUserProfile(updated);
+    }
+
     if (session) {
       await supabase
         .from('sessions')
         .update({ is_active: false, ended_at: new Date().toISOString() })
         .eq('id', session.id);
     }
-    setShowBreathy(false);
-    setBreathyData(null);
+    setShowResultsDashboard(false);
+    setRiskAssessment(null);
+    setProjectedMinutes(undefined);
     setSession(null);
     setCustomer(null);
     setDrinks([]);
     setActiveTab('home');
+  }
+
+  // ---- Open floating chatbot with results context ----
+  function openChatWithResults() {
+    setShowResultsDashboard(false);
+    window.dispatchEvent(new CustomEvent('open-chatbot', {
+      detail: { prompt: 'Explain my impairment check results and what they mean.' },
+    }));
   }
 
   // ---- Fetch drinks for this session ----
@@ -412,14 +460,9 @@ function CustomerPageContent() {
         (payload) => {
           const updated = payload.new as Session;
           if (!updated.is_active) {
-            // Bartender ended the session — show Breathy first
+            // Bartender ended the session — show impairment check modal
             if (customer) {
-              setBreathyData({
-                customer,
-                drinks: [...drinks],
-                hours: (Date.now() - new Date(session.started_at).getTime()) / (1000 * 60 * 60),
-              });
-              setShowBreathy(true);
+              setShowImpairmentModal(true);
             }
           }
         }
@@ -570,11 +613,11 @@ function CustomerPageContent() {
               </div>
               <CardContent className="p-6">
                 <div className="flex flex-col items-center justify-center space-y-2">
-                  <span className="text-sm font-medium text-muted-foreground uppercase tracking-wider">Estimated BAC</span>
-                  <span className="text-6xl font-black tracking-tighter tabular-nums">
-                    {formatBAC(bac).replace('%', '')}
+                  <span className="text-sm font-medium text-muted-foreground uppercase tracking-wider">Estimated BAC Range</span>
+                  <span className="text-4xl font-black tracking-tighter tabular-nums">
+                    {formatBACRange(bacRange)}
                   </span>
-                  <span className="text-sm font-medium text-muted-foreground">%</span>
+                  <span className="text-xs text-muted-foreground">Range accounts for absorption variance</span>
                 </div>
 
                 <div className="mt-8 space-y-2">
@@ -615,6 +658,16 @@ function CustomerPageContent() {
             <p className="text-center text-xs text-muted-foreground pt-2">
               Your bartender will add drinks to your session in real time.
             </p>
+
+            {/* Predictive Alert */}
+            {prediction >= 0 && (
+              <Card className="border-primary/20 bg-primary/5 border-none shadow-sm">
+                <CardContent className="flex items-center gap-3 p-4">
+                  <AlertTriangle className="size-5 text-primary shrink-0" />
+                  <p className="text-sm font-medium">{formatPrediction(prediction)}</p>
+                </CardContent>
+              </Card>
+            )}
           </div>
         )}
 
@@ -706,13 +759,31 @@ function CustomerPageContent() {
         )}
       </div>
 
-      {/* Breathy Modal */}
-      {showBreathy && breathyData && (
-        <BreathyModal
-          customer={breathyData.customer}
-          drinks={breathyData.drinks}
-          hoursElapsed={breathyData.hours}
-          onConfirmEnd={confirmEndSession}
+      {/* Impairment Check Modal */}
+      {showImpairmentModal && (
+        <ImpairmentCheckModal
+          onComplete={handleImpairmentComplete}
+          onCancel={handleSkipImpairment}
+        />
+      )}
+
+      {/* Results Dashboard */}
+      {showResultsDashboard && riskAssessment && (
+        <ResultsDashboard
+          assessment={riskAssessment}
+          projectedMinutes={projectedMinutes}
+          onTalkToAI={openChatWithResults}
+          onClose={confirmEndSession}
+        />
+      )}
+
+      {/* Floating AI Chatbot — always available */}
+      {customer && session && (
+        <FloatingChatbot
+          customer={customer}
+          drinks={drinks}
+          hoursElapsed={hoursElapsed}
+          assessment={riskAssessment}
         />
       )}
 
