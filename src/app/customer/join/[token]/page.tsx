@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useParams } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { Customer, Session } from "@/lib/types";
 
@@ -12,7 +12,6 @@ import { Customer, Session } from "@/lib/types";
  */
 export default function CustomerJoinPage() {
   const params = useParams();
-  const router = useRouter();
   const token = typeof params?.token === "string" ? params.token : null;
   const [status, setStatus] = useState<"loading" | "error" | "redirecting">("loading");
   const [message, setMessage] = useState("");
@@ -30,7 +29,7 @@ export default function CustomerJoinPage() {
       } = await supabase.auth.getSession();
       if (!authSession) {
         const returnUrl = encodeURIComponent(`/customer/join/${token}`);
-        router.replace(`/sign-up?redirect=${returnUrl}`);
+        window.location.replace(`/sign-up?redirect=${returnUrl}`);
         return;
       }
 
@@ -94,9 +93,11 @@ export default function CustomerJoinPage() {
         .update({ customer_id: customerId })
         .eq("id", (sess as Session).id);
 
-      router.replace(`/customer?joined=${(sess as Session).id}`);
+      // Use full-page navigation instead of client-side router.replace
+      // to avoid white-screen issues on mobile browsers / in-app browsers
+      window.location.replace(`/customer?joined=${(sess as Session).id}`);
     })();
-  }, [token, router]);
+  }, [token]);
 
   if (status === "error") {
     return (
