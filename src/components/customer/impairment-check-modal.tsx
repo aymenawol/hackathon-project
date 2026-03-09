@@ -48,7 +48,7 @@ const CHECK_OPTIONS: CheckOption[] = [
   {
     type: 'focus',
     title: 'Focus Check',
-    description: 'Camera-based eye tracking that measures smooth pursuit stability and tracking accuracy.',
+    description: 'MediaPipe iris tracking measures smooth pursuit, jitter, correction frequency, and head stability.',
     icon: <Eye className="size-8" />,
     available: true,
     duration: '10 sec',

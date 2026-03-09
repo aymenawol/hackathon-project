@@ -58,7 +58,8 @@ export function updateBaselines(
         break;
       }
       case "focus": {
-        const observedFocus = check.rawMetrics.smoothPursuitScore;
+        // Support both old (smoothPursuitScore) and new (focusDeltaPercent) metric keys
+        const observedFocus = check.rawMetrics.smoothPursuitScore ?? (100 - (check.baselineDelta ?? 0));
         if (observedFocus && !userReportedImpaired) {
           updated.baselineFocusScore = ema(updated.baselineFocusScore, observedFocus);
         }

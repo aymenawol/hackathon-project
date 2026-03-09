@@ -499,8 +499,8 @@ function CustomerPageContent() {
             </div>
           </div>
         )}
-      <main className="flex min-h-[100dvh] w-full flex-col items-center justify-start bg-background px-4 py-8 sm:justify-center sm:px-6 overflow-y-auto">
-        <div className="w-full max-w-md space-y-6 text-center sm:space-y-8">
+      <main className="flex min-h-[100dvh] w-full flex-col items-center justify-start bg-background px-3 py-4 pt-[env(safe-area-inset-top,16px)] sm:justify-center sm:px-6 sm:py-8 overflow-y-auto">
+        <div className="w-full max-w-md space-y-4 text-center sm:space-y-8">
           <div className="space-y-2">
             <div className="mx-auto flex size-16 items-center justify-center rounded-full bg-primary/10 sm:size-20">
               <Wine className="size-8 text-primary sm:size-10" />
@@ -510,7 +510,7 @@ function CustomerPageContent() {
           </div>
 
           <Card className="border-none shadow-lg text-left">
-            <CardContent className="pt-6 space-y-4">
+            <CardContent className="pt-4 px-4 space-y-3 sm:pt-6 sm:px-6 sm:space-y-4">
               {/* Name */}
               <div className="space-y-1.5">
                 <label className="text-sm font-medium">Your Name</label>
@@ -519,7 +519,7 @@ function CustomerPageContent() {
                   value={customerName}
                   onChange={(e) => setCustomerName(e.target.value)}
                   placeholder="e.g. Alex"
-                  className="w-full rounded-lg border bg-background px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-primary/50"
+                  className="w-full rounded-lg border bg-background px-3 py-2.5 text-base sm:px-4 sm:py-3 sm:text-sm outline-none focus:ring-2 focus:ring-primary/50"
                 />
               </div>
               {/* Weight */}
@@ -527,11 +527,12 @@ function CustomerPageContent() {
                 <label className="text-sm font-medium">Weight (lbs)</label>
                 <input
                   type="number"
+                  inputMode="numeric"
                   value={weightLbs}
                   onChange={(e) => setWeightLbs(Number(e.target.value))}
                   min={60}
                   max={600}
-                  className="w-full rounded-lg border bg-background px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-primary/50"
+                  className="w-full rounded-lg border bg-background px-3 py-2.5 text-base sm:px-4 sm:py-3 sm:text-sm outline-none focus:ring-2 focus:ring-primary/50"
                 />
               </div>
               {/* Gender */}
@@ -540,13 +541,13 @@ function CustomerPageContent() {
                 <div className="grid grid-cols-2 gap-2">
                   <button
                     onClick={() => setGender('male')}
-                    className={`rounded-lg border px-4 py-3 text-sm font-medium transition-colors ${gender === 'male' ? 'border-primary bg-primary/10 text-primary' : 'hover:bg-muted'}`}
+                    className={`rounded-lg border px-4 py-2.5 text-sm font-medium transition-colors active:scale-95 ${gender === 'male' ? 'border-primary bg-primary/10 text-primary' : 'hover:bg-muted'}`}
                   >
                     Male
                   </button>
                   <button
                     onClick={() => setGender('female')}
-                    className={`rounded-lg border px-4 py-3 text-sm font-medium transition-colors ${gender === 'female' ? 'border-primary bg-primary/10 text-primary' : 'hover:bg-muted'}`}
+                    className={`rounded-lg border px-4 py-2.5 text-sm font-medium transition-colors active:scale-95 ${gender === 'female' ? 'border-primary bg-primary/10 text-primary' : 'hover:bg-muted'}`}
                   >
                     Female
                   </button>
@@ -560,9 +561,9 @@ function CustomerPageContent() {
                   value={emergencyPhone}
                   onChange={(e) => setEmergencyPhone(e.target.value)}
                   placeholder="e.g. +1 555-123-4567"
-                  className="w-full rounded-lg border bg-background px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-primary/50"
+                  className="w-full rounded-lg border bg-background px-3 py-2.5 text-base sm:px-4 sm:py-3 sm:text-sm outline-none focus:ring-2 focus:ring-primary/50"
                 />
-                <p className="text-xs text-muted-foreground">
+                <p className="text-[11px] sm:text-xs text-muted-foreground">
                   We&apos;ll text them if you reach a high risk level or when your session ends so they can make sure you get home safe.
                 </p>
               </div>
@@ -570,7 +571,7 @@ function CustomerPageContent() {
               <Button
                 onClick={() => setShowScanner(true)}
                 size="lg"
-                className="w-full rounded-full text-base h-12 sm:h-14 mt-2"
+                className="w-full rounded-full text-base h-12 sm:h-14 mt-2 active:scale-[0.98] transition-transform"
                 disabled={!customerName.trim() || loading}
               >
                 {loading ? 'Starting…' : 'Scan QR to Join'}
@@ -587,8 +588,8 @@ function CustomerPageContent() {
   // ACTIVE SESSION SCREEN
   // ============================================================
   return (
-    <main className="flex min-h-[100dvh] w-full flex-col bg-muted/30 pb-24">
-      <div className="mx-auto w-full max-w-md flex-1 space-y-4 p-3 pt-6 sm:space-y-6 sm:p-4 sm:pt-8">
+    <main className="flex min-h-[100dvh] w-full flex-col bg-muted/30 pb-[calc(3.5rem+env(safe-area-inset-bottom,0px))]">
+      <div className="mx-auto w-full max-w-md flex-1 space-y-3 p-3 pt-[max(0.75rem,env(safe-area-inset-top,12px))] sm:space-y-6 sm:p-4 sm:pt-8">
 
         {/* Header */}
         <header className="flex items-center justify-between px-1 sm:px-2">
@@ -610,20 +611,20 @@ function CustomerPageContent() {
           <div className="space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
             {/* BAC Card */}
             <Card className="overflow-hidden border-none shadow-md">
-              <div className={`flex items-center gap-2 px-6 py-4 ${riskInfo.bgColor}`}>
+              <div className={`flex items-center gap-2 px-4 py-3 sm:px-6 sm:py-4 ${riskInfo.bgColor}`}>
                 {riskInfo.icon}
-                <span className={`font-semibold ${riskInfo.color}`}>{riskInfo.level}</span>
+                <span className={`font-semibold text-sm sm:text-base ${riskInfo.color}`}>{riskInfo.level}</span>
               </div>
-              <CardContent className="p-6">
+              <CardContent className="p-4 sm:p-6">
                 <div className="flex flex-col items-center justify-center space-y-2">
                   <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider sm:text-sm">Estimated BAC Range</span>
-                  <span className="text-3xl font-black tracking-tighter tabular-nums sm:text-4xl">
+                  <span className="text-2xl font-black tracking-tighter tabular-nums sm:text-4xl">
                     {formatBACRange(bacRange)}
                   </span>
                   <span className="text-xs text-muted-foreground">Range accounts for absorption variance</span>
                 </div>
 
-                <div className="mt-8 space-y-2">
+                <div className="mt-5 sm:mt-8 space-y-2">
                   <div className="flex justify-between text-xs font-medium text-muted-foreground">
                     <span>0.00</span>
                     <span>0.08 (Limit)</span>
@@ -643,17 +644,17 @@ function CustomerPageContent() {
             </Card>
 
             {/* Quick Stats Grid */}
-            <div className="grid grid-cols-2 gap-3 sm:gap-4">
+            <div className="grid grid-cols-2 gap-2.5 sm:gap-4">
               <Card className="border-none shadow-sm">
-                <CardContent className="flex flex-col items-center justify-center p-4 sm:p-6">
-                  <span className="text-xs font-medium text-muted-foreground mb-1 sm:text-sm">Drinks</span>
-                  <span className="text-3xl font-bold text-primary sm:text-4xl">{drinks.length}</span>
+                <CardContent className="flex flex-col items-center justify-center p-3 sm:p-6">
+                  <span className="text-[10px] font-medium text-muted-foreground mb-0.5 sm:text-sm sm:mb-1">Drinks</span>
+                  <span className="text-2xl font-bold text-primary sm:text-4xl">{drinks.length}</span>
                 </CardContent>
               </Card>
               <Card className="border-none shadow-sm">
-                <CardContent className="flex flex-col items-center justify-center p-4 sm:p-6">
-                  <span className="text-xs font-medium text-muted-foreground mb-1 sm:text-sm">Hours</span>
-                  <span className="text-3xl font-bold sm:text-4xl">{hoursElapsed.toFixed(1)}</span>
+                <CardContent className="flex flex-col items-center justify-center p-3 sm:p-6">
+                  <span className="text-[10px] font-medium text-muted-foreground mb-0.5 sm:text-sm sm:mb-1">Hours</span>
+                  <span className="text-2xl font-bold sm:text-4xl">{hoursElapsed.toFixed(1)}</span>
                 </CardContent>
               </Card>
             </div>
@@ -810,8 +811,8 @@ function CustomerPageContent() {
       )}
 
       {/* Bottom Navigation Bar */}
-      <div className="fixed bottom-0 left-0 right-0 z-50 border-t bg-background/80 backdrop-blur-lg">
-        <div className="mx-auto flex max-w-md items-center justify-around p-1.5 pb-safe sm:p-2">
+      <div className="fixed bottom-0 left-0 right-0 z-50 border-t bg-background/80 backdrop-blur-lg" style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}>
+        <div className="mx-auto flex max-w-md items-center justify-around p-1.5 sm:p-2">
           <button
             onClick={() => setActiveTab('home')}
             className={`flex flex-col items-center justify-center w-16 h-12 rounded-xl transition-colors sm:h-14 ${activeTab === 'home' ? 'text-primary' : 'text-muted-foreground hover:bg-muted'}`}
