@@ -47,7 +47,7 @@ export function FocusCheck({ onResult, onCancel }: FocusCheckProps) {
   const { ready: meshReady, error: meshError, startProcessing, stopProcessing } = useFaceMesh({
     videoRef,
     onResults: recordFrame,
-    enabled: phase === 'calibrating' || phase === 'tracking',
+    enabled: phase === 'camera' || phase === 'calibrating' || phase === 'tracking',
   });
 
   // Once camera opens, kick off calibration once mesh is ready

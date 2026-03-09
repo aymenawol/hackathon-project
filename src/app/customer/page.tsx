@@ -1,6 +1,6 @@
  "use client";
 
-import { Component, useEffect, useLayoutEffect, useState, useCallback, useRef, lazy, Suspense as ReactSuspense } from 'react';
+import { useEffect, useLayoutEffect, useState, useCallback, useRef } from 'react';
 import { Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
@@ -21,28 +21,7 @@ import {
 import { ImpairmentCheckModal } from '@/components/customer/impairment-check-modal';
 import { ResultsDashboard } from '@/components/customer/results-dashboard';
 import { FloatingChatbot } from '@/components/customer/floating-chatbot';
-
-// Lazy-load FocusCheck so MediaPipe dependencies don't block initial page load
-const FocusCheck = lazy(() => import('@/components/customer/focus-check').then(m => ({ default: m.FocusCheck })));
-
-// Error boundary to catch runtime crashes and show a message instead of white screen
-class ErrorBoundary extends Component<{ children: React.ReactNode }, { error: Error | null }> {
-  state = { error: null as Error | null };
-  static getDerivedStateFromError(error: Error) { return { error }; }
-  render() {
-    if (this.state.error) {
-      return (
-        <main className="flex min-h-dvh w-full flex-col items-center justify-center bg-background px-6 text-center gap-4">
-          <AlertTriangle className="size-10 text-destructive" />
-          <h1 className="text-xl font-bold">Something went wrong</h1>
-          <p className="text-sm text-muted-foreground max-w-sm">{this.state.error.message}</p>
-          <button onClick={() => window.location.reload()} className="mt-4 rounded-lg bg-primary px-6 py-3 text-primary-foreground font-medium">Reload</button>
-        </main>
-      );
-    }
-    return this.props.children;
-  }
-}
+import { FocusCheck } from '@/components/customer/focus-check';
 
 // ---- Risk badge helper (UI only) ----
 function getRiskDisplay(bac: number) {
@@ -496,6 +475,13 @@ function CustomerPageContent() {
     return () => { supabase.removeChannel(channel); };
   }, [session, fetchDrinks]);
 
+  // ---- Polling fallback: refetch drinks periodically in case realtime misses ----
+  useEffect(() => {
+    if (!session) return;
+    const interval = setInterval(fetchDrinks, 10_000);
+    return () => clearInterval(interval);
+  }, [session, fetchDrinks]);
+
   // ============================================================
   // ONBOARDING SCREEN (no active session)
   // ============================================================
@@ -796,25 +782,19 @@ function CustomerPageContent() {
         />
       )}
 
-      {/* Focus Check (Eye Tracking) — lazy loaded */}
+      {/* Focus Check (Eye Tracking) */}
       {showFocusCheck && focusCheckCallback && (
-        <ReactSuspense fallback={
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-background">
-            <div className="size-8 animate-spin rounded-full border-4 border-muted border-t-primary" />
-          </div>
-        }>
-          <FocusCheck
-            onResult={(result) => {
-              focusCheckCallback(result);
-              setShowFocusCheck(false);
-              setFocusCheckCallback(null);
-            }}
-            onCancel={() => {
-              setShowFocusCheck(false);
-              setFocusCheckCallback(null);
-            }}
-          />
-        </ReactSuspense>
+        <FocusCheck
+          onResult={(result) => {
+            focusCheckCallback(result);
+            setShowFocusCheck(false);
+            setFocusCheckCallback(null);
+          }}
+          onCancel={() => {
+            setShowFocusCheck(false);
+            setFocusCheckCallback(null);
+          }}
+        />
       )}
 
       {/* Results Dashboard */}
@@ -869,21 +849,19 @@ function CustomerPageContent() {
 
 export default function CustomerPage() {
   return (
-    <ErrorBoundary>
-      <Suspense
-        fallback={
-          <main className="flex min-h-dvh w-full flex-col items-center justify-center bg-background px-6">
-            <Card className="w-full max-w-sm border-0 shadow-xl">
-              <CardContent className="p-8 text-center">
-                <div className="mx-auto mb-4 size-8 animate-spin rounded-full border-4 border-muted border-t-primary" />
-                <p className="text-sm text-muted-foreground">Loading...</p>
-              </CardContent>
-            </Card>
-          </main>
-        }
-      >
-        <CustomerPageContent />
-      </Suspense>
-    </ErrorBoundary>
+    <Suspense
+      fallback={
+        <main className="flex min-h-dvh w-full flex-col items-center justify-center bg-background px-6">
+          <Card className="w-full max-w-sm border-0 shadow-xl">
+            <CardContent className="p-8 text-center">
+              <div className="mx-auto mb-4 size-8 animate-spin rounded-full border-4 border-muted border-t-primary" />
+              <p className="text-sm text-muted-foreground">Loading...</p>
+            </CardContent>
+          </Card>
+        </main>
+      }
+    >
+      <CustomerPageContent />
+    </Suspense>
   );
 }
