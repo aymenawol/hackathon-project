@@ -18,6 +18,7 @@ interface ImpairmentCheckModalProps {
   onCancel: () => void;
   onRunFocusCheck?: (onResult: (result: ImpairmentResult) => void) => void;
   onRunReactionCheck?: (onResult: (result: ImpairmentResult) => void) => void;
+  onRunStabilityCheck?: (onResult: (result: ImpairmentResult) => void) => void;
 }
 
 interface CheckOption {
@@ -33,10 +34,10 @@ const CHECK_OPTIONS: CheckOption[] = [
   {
     type: 'stability',
     title: 'Stability Check',
-    description: 'Measures body sway and balance using motion sensors. Hold phone to chest for 15 seconds.',
+    description: 'Measures body sway and balance using motion sensors. Stand on one leg while holding your phone to your chest or pocket.',
     icon: <Activity className="size-8" />,
-    available: false,
-    duration: '15 sec',
+    available: true,
+    duration: '20 sec',
   },
   {
     type: 'reaction',
@@ -61,6 +62,7 @@ export function ImpairmentCheckModal({
   onCancel,
   onRunFocusCheck,
   onRunReactionCheck,
+  onRunStabilityCheck,
 }: ImpairmentCheckModalProps) {
   const [selected, setSelected] = useState<Set<ImpairmentCheckType>>(new Set());
   const [completedResults, setCompletedResults] = useState<ImpairmentResult[]>([]);
@@ -98,6 +100,13 @@ export function ImpairmentCheckModal({
       onRunReactionCheck((result) => {
         setCompletedResults((prev) => [...prev, result]);
         setTestsDone((prev) => new Set(prev).add('reaction'));
+        setRunningTest(null);
+      });
+    } else if (nextTest === 'stability' && onRunStabilityCheck) {
+      setRunningTest('stability');
+      onRunStabilityCheck((result) => {
+        setCompletedResults((prev) => [...prev, result]);
+        setTestsDone((prev) => new Set(prev).add('stability'));
         setRunningTest(null);
       });
     }

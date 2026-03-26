@@ -23,6 +23,7 @@ import { ResultsDashboard } from '@/components/customer/results-dashboard';
 import { FloatingChatbot } from '@/components/customer/floating-chatbot';
 import { FocusCheck } from '@/components/customer/focus-check';
 import { ReactionCheck } from '@/components/customer/reaction-check';
+import { StabilityCheck } from '@/components/customer/stability-check';
 
 
 
@@ -53,6 +54,8 @@ function CustomerPageContent() {
   const [focusCheckCallback, setFocusCheckCallback] = useState<((r: ImpairmentResult) => void) | null>(null);
   const [showReactionCheck, setShowReactionCheck] = useState(false);
   const [reactionCheckCallback, setReactionCheckCallback] = useState<((r: ImpairmentResult) => void) | null>(null);
+  const [showStabilityCheck, setShowStabilityCheck] = useState(false);
+  const [stabilityCheckCallback, setStabilityCheckCallback] = useState<((r: ImpairmentResult) => void) | null>(null);
   const [riskAssessment, setRiskAssessment] = useState<RiskAssessment | null>(null);
   const [projectedMinutes, setProjectedMinutes] = useState<number | undefined>(undefined);
 
@@ -772,6 +775,10 @@ function CustomerPageContent() {
             setReactionCheckCallback(() => onResultCb);
             setShowReactionCheck(true);
           }}
+          onRunStabilityCheck={(onResultCb) => {
+            setStabilityCheckCallback(() => onResultCb);
+            setShowStabilityCheck(true);
+          }}
         />
       )}
 
@@ -802,6 +809,21 @@ function CustomerPageContent() {
           onCancel={() => {
             setShowReactionCheck(false);
             setReactionCheckCallback(null);
+          }}
+        />
+      )}
+
+      {/* Stability Check (Motion / Gyroscope) */}
+      {showStabilityCheck && stabilityCheckCallback && (
+        <StabilityCheck
+          onResult={(result) => {
+            stabilityCheckCallback(result);
+            setShowStabilityCheck(false);
+            setStabilityCheckCallback(null);
+          }}
+          onCancel={() => {
+            setShowStabilityCheck(false);
+            setStabilityCheckCallback(null);
           }}
         />
       )}
