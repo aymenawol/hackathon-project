@@ -6,6 +6,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
+import Image from "next/image";
 
 interface CustomerSidebarProps {
   sessions: ActiveSession[];
@@ -21,9 +22,12 @@ export function CustomerSidebar({
   return (
     <aside className="flex w-72 shrink-0 flex-col border-r bg-sidebar h-full">
       <div className="border-b px-4 py-3">
-        <h2 className="text-sm font-semibold tracking-tight">
-          Active Customers
-        </h2>
+        <div className="flex items-center gap-2 mb-1">
+          <Image src="/logo1.png" alt="Woozy" width={32} height={32} className="h-6 w-auto object-contain" />
+          <h2 className="text-sm font-semibold tracking-tight">
+            Active Customers
+          </h2>
+        </div>
         <p className="text-xs text-muted-foreground">
           {sessions.length} session{sessions.length !== 1 ? "s" : ""}
         </p>

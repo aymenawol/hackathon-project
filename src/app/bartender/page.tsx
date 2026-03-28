@@ -7,6 +7,7 @@ import { SessionDetail } from "@/components/bartender/session-detail";
 import { Button } from "@/components/ui/button";
 import { QrCode, X, Menu, ChevronLeft } from "lucide-react";
 import { ThemeToggle } from '@/components/ui/theme-toggle';
+import Image from 'next/image';
 import dynamic from "next/dynamic";
 
 const QRCode = dynamic(
@@ -111,8 +112,9 @@ export default function BartenderPage() {
           <button onClick={() => setShowSidebar(true)} className="p-1.5 rounded-lg hover:bg-muted cursor-pointer">
             <Menu className="size-5" />
           </button>
+          <Image src="/logo1.png" alt="Woozy" width={32} height={32} className="h-6 w-auto object-contain" />
           <span className="text-sm font-semibold truncate flex-1">
-            {selectedSession ? selectedSession.customer.name : 'Woozy Bartender'}
+            {selectedSession ? selectedSession.customer.name : 'Bartender'}
           </span>
           <span className="text-xs text-muted-foreground">
             {sessions.length} session{sessions.length !== 1 ? 's' : ''}
