@@ -224,16 +224,16 @@ export function FocusCheck({ onResult, onCancel, bacEstimate = 0 }: FocusCheckPr
         {/* Header */}
         <div className="px-4 py-3 sm:px-6 sm:py-4 border-b flex items-center justify-between shrink-0">
           <div className="flex items-center gap-3">
-            <div className="flex size-9 sm:size-10 items-center justify-center rounded-xl bg-primary/10">
-              <Eye className="size-4 sm:size-5 text-primary" />
+            <div className="flex size-10 items-center justify-center rounded-xl bg-primary/10">
+              <Eye className="size-5 text-primary" />
             </div>
             <div>
-              <h2 className="font-bold text-sm sm:text-base">Focus Check</h2>
-              <p className="text-[10px] sm:text-xs text-muted-foreground">AI-powered eye tracking</p>
+              <h2 className="font-bold text-base">Focus Check</h2>
+              <p className="text-xs text-muted-foreground">AI-powered eye tracking</p>
             </div>
           </div>
-          <button onClick={handleCancel} className="p-1.5 rounded-full hover:bg-muted">
-            <X className="size-4 sm:size-5 text-muted-foreground" />
+          <button onClick={handleCancel} className="p-2 rounded-full hover:bg-muted transition-colors">
+            <X className="size-5 text-muted-foreground" />
           </button>
         </div>
 
@@ -241,7 +241,7 @@ export function FocusCheck({ onResult, onCancel, bacEstimate = 0 }: FocusCheckPr
         <div className={showCamera ? "relative w-full" : "hidden"}>
           <video
             ref={videoRef}
-            className="w-full h-48 sm:h-56 object-cover bg-black"
+            className="w-full h-52 object-cover bg-black"
             style={{ transform: 'scaleX(-1)' }}
             playsInline
             muted
@@ -253,8 +253,8 @@ export function FocusCheck({ onResult, onCancel, bacEstimate = 0 }: FocusCheckPr
           />
           {/* Distance guidance overlay */}
           {distanceHint !== 'ok' && (
-            <div className="absolute top-2 left-0 right-0 flex justify-center">
-              <span className="bg-black/70 text-white text-xs font-medium px-3 py-1.5 rounded-full backdrop-blur-sm">
+            <div className="absolute top-3 left-0 right-0 flex justify-center">
+              <span className="bg-black/70 text-white text-xs font-medium px-4 py-2 rounded-full backdrop-blur-sm">
                 {distanceHint === 'closer'
                   ? '📱 Move closer to the screen'
                   : '📱 Move further from the screen'}
@@ -262,8 +262,8 @@ export function FocusCheck({ onResult, onCancel, bacEstimate = 0 }: FocusCheckPr
             </div>
           )}
           {distanceHint === 'ok' && showCamera && phase !== 'camera' && (
-            <div className="absolute top-2 left-0 right-0 flex justify-center">
-              <span className="bg-emerald-600/80 text-white text-xs font-medium px-3 py-1.5 rounded-full backdrop-blur-sm">
+            <div className="absolute top-3 left-0 right-0 flex justify-center">
+              <span className="bg-emerald-600/80 text-white text-xs font-medium px-4 py-2 rounded-full backdrop-blur-sm">
                 ✓ Good distance
               </span>
             </div>
@@ -272,19 +272,35 @@ export function FocusCheck({ onResult, onCancel, bacEstimate = 0 }: FocusCheckPr
 
         {/* --- Instructions Phase --- */}
         {phase === 'idle' && (
-          <div className="px-4 py-6 sm:px-6 sm:py-8 space-y-5 sm:space-y-6 text-center overflow-y-auto">
-            <div className="flex size-16 sm:size-20 mx-auto items-center justify-center rounded-full bg-primary/10">
-              <Camera className="size-8 sm:size-10 text-primary" />
+          <div className="px-5 py-8 space-y-6 text-center overflow-y-auto">
+            <div className="flex size-20 mx-auto items-center justify-center rounded-2xl bg-primary/10">
+              <Camera className="size-10 text-primary" />
             </div>
             <div className="space-y-2">
-              <h3 className="text-base sm:text-lg font-bold">Follow the Moving Dot</h3>
-              <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
+              <h3 className="text-lg font-bold">Follow the Moving Dot</h3>
+              <p className="text-sm text-muted-foreground leading-relaxed max-w-xs mx-auto">
                 A dot will move across the screen for {TEST_DURATION} seconds.
                 Follow it with your eyes while keeping your head still.
               </p>
             </div>
 
-            <div className="px-3 py-2 rounded-lg bg-muted/50 text-[10px] sm:text-xs text-muted-foreground text-center">
+            {/* Numbered steps */}
+            <div className="space-y-2 text-left max-w-xs mx-auto">
+              <div className="flex items-center gap-3">
+                <div className="flex size-7 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-bold text-primary">1</div>
+                <span className="text-sm text-muted-foreground">Allow camera access when prompted</span>
+              </div>
+              <div className="flex items-center gap-3">
+                <div className="flex size-7 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-bold text-primary">2</div>
+                <span className="text-sm text-muted-foreground">Position your face so blue circles appear over your eyes</span>
+              </div>
+              <div className="flex items-center gap-3">
+                <div className="flex size-7 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-bold text-primary">3</div>
+                <span className="text-sm text-muted-foreground">Follow the dot with just your eyes</span>
+              </div>
+            </div>
+
+            <div className="px-3 py-2 rounded-lg bg-muted/50 text-xs text-muted-foreground text-center">
               Video is processed locally. AI analyses metrics only.
             </div>
 
@@ -295,8 +311,8 @@ export function FocusCheck({ onResult, onCancel, bacEstimate = 0 }: FocusCheckPr
               </div>
             )}
 
-            <Button onClick={handleStart} className="w-full h-11 sm:h-12 rounded-xl" size="lg">
-              <Camera className="mr-2 size-4 sm:size-5" />
+            <Button onClick={handleStart} className="w-full h-12 rounded-xl" size="lg">
+              <Camera className="mr-2 size-5" />
               Start Focus Check
             </Button>
           </div>
@@ -304,12 +320,14 @@ export function FocusCheck({ onResult, onCancel, bacEstimate = 0 }: FocusCheckPr
 
         {/* --- Camera / Calibrating Phase --- */}
         {(phase === 'camera' || phase === 'calibrating') && (
-          <div className="px-4 py-4 sm:px-6 sm:py-6 space-y-3 text-center overflow-y-auto">
-            <div className="mx-auto size-8 sm:size-10 animate-spin rounded-full border-4 border-muted border-t-primary" />
-            <p className="text-xs sm:text-sm font-medium animate-pulse">
+          <div className="px-5 py-6 space-y-4 text-center overflow-y-auto">
+            <div className="flex size-16 mx-auto items-center justify-center rounded-full border-4 border-muted">
+              <div className="size-10 animate-spin rounded-full border-4 border-muted border-t-primary" />
+            </div>
+            <p className="text-sm font-medium animate-pulse">
               {phase === 'camera' ? 'Starting camera...' : 'Look straight ahead — calibrating...'}
             </p>
-            <p className="text-[10px] sm:text-xs text-muted-foreground">
+            <p className="text-xs text-muted-foreground">
               Move close enough that blue circles appear over your eyes.
             </p>
           </div>
@@ -317,40 +335,42 @@ export function FocusCheck({ onResult, onCancel, bacEstimate = 0 }: FocusCheckPr
 
         {/* --- Tracking Phase --- */}
         {phase === 'tracking' && (
-          <div className="px-4 py-3 sm:px-6 sm:py-4 space-y-3 sm:space-y-4 overflow-y-auto">
+          <div className="px-4 py-4 space-y-4 overflow-y-auto">
             {/* Dot tracking area */}
-            <div className="relative w-full h-24 sm:h-32 rounded-xl bg-muted/50 border overflow-hidden">
+            <div className="relative w-full h-28 rounded-xl bg-muted/50 border overflow-hidden">
               <DotTrackerCanvas dotX={dotX} active />
-              <p className="absolute bottom-1.5 sm:bottom-2 left-0 right-0 text-center text-[9px] sm:text-[10px] text-muted-foreground">
+              <p className="absolute bottom-2 left-0 right-0 text-center text-[10px] text-muted-foreground">
                 Follow the dot with your eyes
               </p>
             </div>
 
             {/* Progress */}
-            <div className="space-y-1">
-              <div className="flex justify-between text-[10px] sm:text-xs text-muted-foreground">
+            <div className="space-y-1.5">
+              <div className="flex justify-between text-xs text-muted-foreground">
                 <span>Progress</span>
-                <span>{Math.round(progress)}%</span>
+                <span className="font-medium">{Math.round(progress)}%</span>
               </div>
-              <Progress value={progress} className="h-1.5 sm:h-2" />
+              <Progress value={progress} className="h-2" />
             </div>
           </div>
         )}
 
         {/* --- Analyzing Phase --- */}
         {phase === 'analyzing' && (
-          <div className="px-4 py-10 sm:px-6 sm:py-12 text-center space-y-4">
-            <div className="mx-auto size-10 sm:size-12 animate-spin rounded-full border-4 border-muted border-t-primary" />
-            <p className="text-xs sm:text-sm font-medium">Analysing eye tracking data...</p>
+          <div className="px-5 py-12 text-center space-y-4">
+            <div className="mx-auto size-12 animate-spin rounded-full border-4 border-muted border-t-primary" />
+            <p className="text-sm font-medium">Analysing eye tracking data...</p>
           </div>
         )}
 
         {/* --- Error Phase --- */}
         {phase === 'error' && (
-          <div className="px-4 py-6 sm:px-6 sm:py-8 text-center space-y-4 overflow-y-auto">
-            <AlertTriangle className="size-10 text-destructive mx-auto" />
+          <div className="px-5 py-8 text-center space-y-4 overflow-y-auto">
+            <div className="flex size-16 mx-auto items-center justify-center rounded-full bg-destructive/10">
+              <AlertTriangle className="size-8 text-destructive" />
+            </div>
             <p className="text-sm text-destructive">{combinedError}</p>
-            <Button variant="outline" onClick={handleCancel} className="w-full h-11 rounded-xl">
+            <Button variant="outline" onClick={handleCancel} className="w-full h-12 rounded-xl">
               Close
             </Button>
           </div>
@@ -358,10 +378,10 @@ export function FocusCheck({ onResult, onCancel, bacEstimate = 0 }: FocusCheckPr
 
         {/* --- Complete Phase --- */}
         {phase === 'complete' && result && (
-          <div className="px-4 py-4 sm:px-6 sm:py-6 space-y-3 sm:space-y-4 overflow-y-auto">
+          <div className="px-5 py-5 space-y-4 overflow-y-auto">
             {/* AI Verdict */}
             {aiLoading ? (
-              <div className="flex items-center justify-center gap-2 py-2">
+              <div className="flex items-center justify-center gap-2 py-3">
                 <Loader2 className="size-5 animate-spin text-primary" />
                 <span className="text-sm font-medium">AI is analysing your results...</span>
               </div>
@@ -371,15 +391,15 @@ export function FocusCheck({ onResult, onCancel, bacEstimate = 0 }: FocusCheckPr
                 aiVerdict.verdict === 'slightly_impaired' ? 'border-amber-500/30 bg-amber-500/5' :
                 'border-destructive/30 bg-destructive/5'
               }>
-                <CardContent className="p-3 sm:p-4 text-center space-y-1">
-                  <p className={`text-lg sm:text-xl font-bold ${verdictColor}`}>{verdictLabel}</p>
-                  <p className="text-xs sm:text-sm text-muted-foreground">{aiVerdict.explanation}</p>
+                <CardContent className="p-4 text-center space-y-1.5">
+                  <p className={`text-xl font-bold ${verdictColor}`}>{verdictLabel}</p>
+                  <p className="text-sm text-muted-foreground leading-relaxed">{aiVerdict.explanation}</p>
                 </CardContent>
               </Card>
             ) : (
               <div className="flex items-center justify-center gap-2 text-emerald-500">
-                <CheckCircle2 className="size-5 sm:size-6" />
-                <span className="font-bold text-sm sm:text-base">Focus Check Complete</span>
+                <CheckCircle2 className="size-6" />
+                <span className="font-bold text-base">Focus Check Complete</span>
               </div>
             )}
 
@@ -390,27 +410,27 @@ export function FocusCheck({ onResult, onCancel, bacEstimate = 0 }: FocusCheckPr
               </summary>
               <div className="mt-2 space-y-1.5">
                 <Card>
-                  <CardContent className="p-2 sm:p-2.5 flex items-center justify-between">
-                    <span className="text-[10px] sm:text-xs text-muted-foreground">Pursuit Gain</span>
-                    <span className="font-bold text-xs sm:text-sm">{result.rawMetrics.pursuitGain.toFixed(2)}</span>
+                  <CardContent className="p-2.5 flex items-center justify-between">
+                    <span className="text-xs text-muted-foreground">Pursuit Gain</span>
+                    <span className="font-bold text-sm">{result.rawMetrics.pursuitGain.toFixed(2)}</span>
                   </CardContent>
                 </Card>
                 <Card>
-                  <CardContent className="p-2 sm:p-2.5 flex items-center justify-between">
-                    <span className="text-[10px] sm:text-xs text-muted-foreground">Saccade Rate</span>
-                    <span className="font-bold text-xs sm:text-sm">{result.rawMetrics.saccadeRate.toFixed(1)}/s</span>
+                  <CardContent className="p-2.5 flex items-center justify-between">
+                    <span className="text-xs text-muted-foreground">Saccade Rate</span>
+                    <span className="font-bold text-sm">{result.rawMetrics.saccadeRate.toFixed(1)}/s</span>
                   </CardContent>
                 </Card>
                 <Card>
-                  <CardContent className="p-2 sm:p-2.5 flex items-center justify-between">
-                    <span className="text-[10px] sm:text-xs text-muted-foreground">Position Error</span>
-                    <span className="font-bold text-xs sm:text-sm">{result.rawMetrics.positionError.toFixed(3)}</span>
+                  <CardContent className="p-2.5 flex items-center justify-between">
+                    <span className="text-xs text-muted-foreground">Position Error</span>
+                    <span className="font-bold text-sm">{result.rawMetrics.positionError.toFixed(3)}</span>
                   </CardContent>
                 </Card>
                 <Card>
-                  <CardContent className="p-2 sm:p-2.5 flex items-center justify-between">
-                    <span className="text-[10px] sm:text-xs text-muted-foreground">Gaze Stability</span>
-                    <span className="font-bold text-xs sm:text-sm">{result.rawMetrics.gazeStability.toFixed(3)}</span>
+                  <CardContent className="p-2.5 flex items-center justify-between">
+                    <span className="text-xs text-muted-foreground">Gaze Stability</span>
+                    <span className="font-bold text-sm">{result.rawMetrics.gazeStability.toFixed(3)}</span>
                   </CardContent>
                 </Card>
               </div>
@@ -418,11 +438,11 @@ export function FocusCheck({ onResult, onCancel, bacEstimate = 0 }: FocusCheckPr
 
             <Button
               onClick={handleSubmit}
-              className="w-full h-11 sm:h-12 rounded-xl"
+              className="w-full h-12 rounded-xl"
               size="lg"
               disabled={aiLoading}
             >
-              <CheckCircle2 className="mr-2 size-4 sm:size-5" />
+              <CheckCircle2 className="mr-2 size-5" />
               Submit Results
             </Button>
           </div>

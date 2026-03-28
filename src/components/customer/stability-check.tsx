@@ -238,46 +238,62 @@ export function StabilityCheck({ onResult, onCancel }: StabilityCheckProps) {
         {/* Header */}
         <div className="px-4 py-3 sm:px-6 sm:py-4 border-b flex items-center justify-between shrink-0">
           <div className="flex items-center gap-3">
-            <div className="flex size-9 sm:size-10 items-center justify-center rounded-xl bg-blue-500/10">
-              <Activity className="size-4 sm:size-5 text-blue-500" />
+            <div className="flex size-10 items-center justify-center rounded-xl bg-blue-500/10">
+              <Activity className="size-5 text-blue-500" />
             </div>
             <div>
-              <h2 className="font-bold text-sm sm:text-base">Stability Check</h2>
-              <p className="text-[10px] sm:text-xs text-muted-foreground">Balance analysis via motion sensors</p>
+              <h2 className="font-bold text-base">Stability Check</h2>
+              <p className="text-xs text-muted-foreground">Balance analysis via motion sensors</p>
             </div>
           </div>
-          <button onClick={onCancel} className="p-1.5 rounded-full hover:bg-muted">
-            <X className="size-4 sm:size-5 text-muted-foreground" />
+          <button onClick={onCancel} className="p-2 rounded-full hover:bg-muted transition-colors">
+            <X className="size-5 text-muted-foreground" />
           </button>
         </div>
 
         {/* ── Instructions ─────────────────────────────────────────── */}
         {phase === 'idle' && (
-          <div className="px-4 py-6 sm:px-6 sm:py-8 space-y-5 sm:space-y-6 text-center overflow-y-auto">
-            <div className="flex size-16 sm:size-20 mx-auto items-center justify-center rounded-full bg-blue-500/10">
-              <Smartphone className="size-8 sm:size-10 text-blue-500" />
+          <div className="px-5 py-8 space-y-6 text-center overflow-y-auto">
+            <div className="flex size-20 mx-auto items-center justify-center rounded-2xl bg-blue-500/10">
+              <Smartphone className="size-10 text-blue-500" />
             </div>
             <div className="space-y-2">
-              <h3 className="text-base sm:text-lg font-bold">One-Leg Balance Test</h3>
-              <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
+              <h3 className="text-lg font-bold">One-Leg Balance Test</h3>
+              <p className="text-sm text-muted-foreground leading-relaxed max-w-xs mx-auto">
                 Hold the phone to your chest with both hands,
                 then <strong>stand on one leg</strong> for <strong>{RECORDING_SECONDS} seconds</strong>.
-                The app will measure your body sway and balance stability.
               </p>
-              <div className="flex items-center justify-center gap-2 mt-3 text-xs text-amber-600 bg-amber-500/10 rounded-lg px-3 py-2">
-                <AlertTriangle className="size-4 shrink-0" />
-                <span>Don&apos;t put the phone on a table — hold it to your chest and balance on one foot!</span>
+            </div>
+
+            {/* Numbered steps */}
+            <div className="space-y-2 text-left max-w-xs mx-auto">
+              <div className="flex items-center gap-3">
+                <div className="flex size-7 shrink-0 items-center justify-center rounded-full bg-blue-500/10 text-xs font-bold text-blue-500">1</div>
+                <span className="text-sm text-muted-foreground">Hold the phone to your chest</span>
+              </div>
+              <div className="flex items-center gap-3">
+                <div className="flex size-7 shrink-0 items-center justify-center rounded-full bg-blue-500/10 text-xs font-bold text-blue-500">2</div>
+                <span className="text-sm text-muted-foreground">Stand on one leg when countdown ends</span>
+              </div>
+              <div className="flex items-center gap-3">
+                <div className="flex size-7 shrink-0 items-center justify-center rounded-full bg-blue-500/10 text-xs font-bold text-blue-500">3</div>
+                <span className="text-sm text-muted-foreground">Hold balance for {RECORDING_SECONDS} seconds</span>
               </div>
             </div>
 
+            <div className="flex items-center justify-center gap-2 text-xs text-amber-600 bg-amber-500/10 rounded-xl px-4 py-2.5">
+              <AlertTriangle className="size-4 shrink-0" />
+              <span>Don&apos;t put the phone on a table — hold it to your chest!</span>
+            </div>
+
             {permissionDenied && (
-              <div className="text-xs text-destructive bg-destructive/10 rounded-lg px-3 py-2">
+              <div className="text-xs text-destructive bg-destructive/10 rounded-xl px-4 py-2.5">
                 Motion sensor permission was denied. Please enable it in your device settings and try again.
               </div>
             )}
 
-            <Button onClick={handleStart} className="w-full h-11 sm:h-12 rounded-xl" size="lg">
-              <Activity className="mr-2 size-4 sm:size-5" />
+            <Button onClick={handleStart} className="w-full h-12 rounded-xl" size="lg">
+              <Activity className="mr-2 size-5" />
               Start Stability Check
             </Button>
           </div>
@@ -285,65 +301,67 @@ export function StabilityCheck({ onResult, onCancel }: StabilityCheckProps) {
 
         {/* ── Countdown ────────────────────────────────────────────── */}
         {phase === 'countdown' && (
-          <div className="px-4 py-12 sm:px-6 sm:py-16 text-center space-y-3">
-            <div className="text-6xl font-bold text-primary animate-pulse">{countdown}</div>
-            <p className="text-sm text-muted-foreground">Get ready — stand on one leg!</p>
+          <div className="px-5 py-14 text-center space-y-4">
+            <div className="flex size-32 mx-auto items-center justify-center rounded-full border-4 border-primary/20">
+              <span className="text-6xl font-bold text-primary animate-pulse">{countdown}</span>
+            </div>
+            <p className="text-sm font-medium text-muted-foreground">Get ready — stand on one leg!</p>
             <p className="text-xs text-muted-foreground">Hold the phone to your chest with both hands.</p>
           </div>
         )}
 
         {/* ── Recording ────────────────────────────────────────────── */}
         {phase === 'recording' && (
-          <div className="px-4 py-6 sm:px-6 sm:py-8 space-y-5 text-center">
-            <div className="relative flex size-24 mx-auto items-center justify-center">
-              {/* Pulsing ring */}
-              <div className="absolute inset-0 rounded-full border-4 border-blue-500/30 animate-ping" />
-              <div className="flex size-20 items-center justify-center rounded-full bg-blue-500/10">
-                <Activity className="size-10 text-blue-500 animate-pulse" />
+          <div className="px-5 py-8 space-y-6 text-center">
+            {/* SVG circular progress */}
+            <div className="relative flex size-40 mx-auto items-center justify-center">
+              <svg className="absolute inset-0 -rotate-90" viewBox="0 0 160 160">
+                <circle cx="80" cy="80" r="72" fill="none" stroke="currentColor" strokeWidth="6" className="text-muted/30" />
+                <circle cx="80" cy="80" r="72" fill="none" stroke="currentColor" strokeWidth="6" className="text-blue-500 transition-all duration-300"
+                  strokeDasharray={`${2 * Math.PI * 72}`}
+                  strokeDashoffset={`${2 * Math.PI * 72 * (1 - progress / 100)}`}
+                  strokeLinecap="round"
+                />
+              </svg>
+              <div className="text-center">
+                <Activity className="size-8 text-blue-500 mx-auto mb-1 animate-pulse" />
+                <span className="text-2xl font-bold tabular-nums">{RECORDING_SECONDS - elapsed}s</span>
               </div>
             </div>
             <div className="space-y-1">
-              <h3 className="text-base sm:text-lg font-bold">Recording…</h3>
-              <p className="text-xs sm:text-sm text-muted-foreground">
-                Hold your balance — {RECORDING_SECONDS - elapsed}s remaining
+              <h3 className="text-base font-bold">Recording…</h3>
+              <p className="text-sm text-muted-foreground">
+                Hold your balance
               </p>
-              <p className="text-[10px] text-muted-foreground">
-                {samplesRef.current.length} samples collected
-              </p>
-            </div>
-            <Progress value={progress} className="h-2" />
-            <div className="flex justify-between text-[10px] text-muted-foreground">
-              <span>{elapsed}s</span>
-              <span>{RECORDING_SECONDS}s</span>
             </div>
           </div>
         )}
 
         {/* ── Analysing ────────────────────────────────────────────── */}
         {phase === 'analysing' && (
-          <div className="px-4 py-12 sm:px-6 sm:py-16 text-center space-y-3">
-            <Loader2 className="size-10 mx-auto text-primary animate-spin" />
+          <div className="px-5 py-14 text-center space-y-4">
+            <Loader2 className="size-12 mx-auto text-primary animate-spin" />
             <p className="text-sm font-medium">Analysing your gait data…</p>
           </div>
         )}
 
         {/* ── Error (flat / insufficient motion) ────────────────────── */}
         {phase === 'error' && (
-          <div className="px-4 py-6 sm:px-6 sm:py-8 space-y-5 text-center">
-            <div className="flex size-16 sm:size-20 mx-auto items-center justify-center rounded-full bg-amber-500/10">
-              <AlertTriangle className="size-8 sm:size-10 text-amber-500" />
+          <div className="px-5 py-8 space-y-5 text-center">
+            <div className="flex size-16 mx-auto items-center justify-center rounded-full bg-amber-500/10">
+              <AlertTriangle className="size-8 text-amber-500" />
             </div>
             <div className="space-y-2">
-              <h3 className="text-base sm:text-lg font-bold">Test Needs a Retry</h3>
-              <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
+              <h3 className="text-lg font-bold">Test Needs a Retry</h3>
+              <p className="text-sm text-muted-foreground leading-relaxed">
                 {errorMessage}
               </p>
             </div>
             <div className="flex gap-2">
-              <Button variant="outline" onClick={onCancel} className="flex-1 h-11 rounded-xl">
+              <Button variant="outline" onClick={onCancel} className="flex-1 h-12 rounded-xl">
                 Cancel
               </Button>
-              <Button onClick={() => { setPhase('idle'); setPermissionDenied(false); setErrorMessage(''); }} className="flex-1 h-11 rounded-xl">
+              <Button onClick={() => { setPhase('idle'); setPermissionDenied(false); setErrorMessage(''); }} className="flex-1 h-12 rounded-xl">
                 Try Again
               </Button>
             </div>
@@ -352,10 +370,10 @@ export function StabilityCheck({ onResult, onCancel }: StabilityCheckProps) {
 
         {/* ── Complete ──────────────────────────────────────────────── */}
         {phase === 'complete' && analysis && (
-          <div className="px-4 py-4 sm:px-6 sm:py-6 space-y-3 sm:space-y-4 overflow-y-auto">
+          <div className="px-5 py-5 space-y-4 overflow-y-auto">
             {/* AI Verdict */}
             {aiLoading ? (
-              <div className="flex items-center justify-center gap-2 py-2">
+              <div className="flex items-center justify-center gap-2 py-3">
                 <Loader2 className="size-5 animate-spin text-primary" />
                 <span className="text-sm font-medium">AI is analysing your results…</span>
               </div>
@@ -369,15 +387,15 @@ export function StabilityCheck({ onResult, onCancel }: StabilityCheckProps) {
                     : 'border-destructive/30 bg-destructive/5'
                 }
               >
-                <CardContent className="p-3 sm:p-4 text-center space-y-1">
-                  <p className={`text-lg sm:text-xl font-bold ${verdictColor}`}>{verdictLabel}</p>
-                  <p className="text-xs sm:text-sm text-muted-foreground">{aiVerdict.explanation}</p>
+                <CardContent className="p-4 text-center space-y-1.5">
+                  <p className={`text-xl font-bold ${verdictColor}`}>{verdictLabel}</p>
+                  <p className="text-sm text-muted-foreground leading-relaxed">{aiVerdict.explanation}</p>
                 </CardContent>
               </Card>
             ) : (
               <div className="flex items-center justify-center gap-2 text-emerald-500">
-                <CheckCircle2 className="size-5 sm:size-6" />
-                <span className="font-bold text-sm sm:text-base">Stability Check Complete</span>
+                <CheckCircle2 className="size-6" />
+                <span className="font-bold text-base">Stability Check Complete</span>
               </div>
             )}
 
@@ -388,33 +406,33 @@ export function StabilityCheck({ onResult, onCancel }: StabilityCheckProps) {
               </summary>
               <div className="mt-2 space-y-1.5">
                 <Card>
-                  <CardContent className="p-2 sm:p-2.5 flex items-center justify-between">
-                    <span className="text-[10px] sm:text-xs text-muted-foreground">Accel Std</span>
-                    <span className="font-bold text-xs sm:text-sm">{analysis.metrics!.accStd} m/s²</span>
+                  <CardContent className="p-2.5 flex items-center justify-between">
+                    <span className="text-xs text-muted-foreground">Accel Std</span>
+                    <span className="font-bold text-sm">{analysis.metrics!.accStd} m/s²</span>
                   </CardContent>
                 </Card>
                 <Card>
-                  <CardContent className="p-2 sm:p-2.5 flex items-center justify-between">
-                    <span className="text-[10px] sm:text-xs text-muted-foreground">Gyro Std</span>
-                    <span className="font-bold text-xs sm:text-sm">{analysis.metrics!.gyroStd} rad/s</span>
+                  <CardContent className="p-2.5 flex items-center justify-between">
+                    <span className="text-xs text-muted-foreground">Gyro Std</span>
+                    <span className="font-bold text-sm">{analysis.metrics!.gyroStd} rad/s</span>
                   </CardContent>
                 </Card>
                 <Card>
-                  <CardContent className="p-2 sm:p-2.5 flex items-center justify-between">
-                    <span className="text-[10px] sm:text-xs text-muted-foreground">Jerk Mean</span>
-                    <span className="font-bold text-xs sm:text-sm">{analysis.metrics!.jerkMean} m/s³</span>
+                  <CardContent className="p-2.5 flex items-center justify-between">
+                    <span className="text-xs text-muted-foreground">Jerk Mean</span>
+                    <span className="font-bold text-sm">{analysis.metrics!.jerkMean} m/s³</span>
                   </CardContent>
                 </Card>
                 <Card>
-                  <CardContent className="p-2 sm:p-2.5 flex items-center justify-between">
-                    <span className="text-[10px] sm:text-xs text-muted-foreground">Lateral Sway</span>
-                    <span className="font-bold text-xs sm:text-sm">{analysis.metrics!.lateralStd} m/s²</span>
+                  <CardContent className="p-2.5 flex items-center justify-between">
+                    <span className="text-xs text-muted-foreground">Lateral Sway</span>
+                    <span className="font-bold text-sm">{analysis.metrics!.lateralStd} m/s²</span>
                   </CardContent>
                 </Card>
                 <Card>
-                  <CardContent className="p-2 sm:p-2.5 flex items-center justify-between">
-                    <span className="text-[10px] sm:text-xs text-muted-foreground">Samples</span>
-                    <span className="font-bold text-xs sm:text-sm">{analysis.metrics!.sampleCount}</span>
+                  <CardContent className="p-2.5 flex items-center justify-between">
+                    <span className="text-xs text-muted-foreground">Samples</span>
+                    <span className="font-bold text-sm">{analysis.metrics!.sampleCount}</span>
                   </CardContent>
                 </Card>
               </div>
@@ -424,19 +442,19 @@ export function StabilityCheck({ onResult, onCancel }: StabilityCheckProps) {
               <Button
                 variant="outline"
                 onClick={() => { setPhase('idle'); setAnalysis(null); setAiVerdict(null); setAiLoading(false); }}
-                className="flex-1 h-11 sm:h-12 rounded-xl"
+                className="flex-1 h-12 rounded-xl"
                 size="lg"
               >
-                <Activity className="mr-2 size-4 sm:size-5" />
+                <Activity className="mr-2 size-5" />
                 Retry
               </Button>
               <Button
                 onClick={handleSubmit}
-                className="flex-1 h-11 sm:h-12 rounded-xl"
+                className="flex-1 h-12 rounded-xl"
                 size="lg"
                 disabled={aiLoading}
               >
-                <CheckCircle2 className="mr-2 size-4 sm:size-5" />
+                <CheckCircle2 className="mr-2 size-5" />
                 Submit
               </Button>
             </div>

@@ -5,7 +5,7 @@ import { Customer, Drink } from '@/lib/types';
 import { RiskAssessment } from '@/lib/impairment-types';
 import { estimateBAC, bacRiskLevel, formatBAC, hoursUntilSober } from '@/lib/bac';
 import { formatBACRange } from '@/lib/bac-range';
-import { MessageCircle, X, Send, Wind, Loader2 } from 'lucide-react';
+import { MessageCircle, X, Send, Sparkles, Loader2, ChevronDown } from 'lucide-react';
 
 interface ChatMessage {
   role: 'user' | 'assistant';
@@ -150,11 +150,10 @@ export function FloatingChatbot({ customer, drinks, hoursElapsed, assessment }: 
       {!isOpen && (
         <button
           onClick={openChat}
-          className="fixed bottom-20 right-3 z-[90] flex size-12 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-105 active:scale-95 sm:bottom-24 sm:right-4 sm:size-14"
+          className="fixed bottom-20 right-3 z-[90] flex size-14 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-105 active:scale-95 sm:bottom-24 sm:right-4"
           aria-label="Open AI Assistant"
         >
-          <MessageCircle className="size-5 sm:size-6" />
-          {/* Notification dot when there's assessment data */}
+          <Sparkles className="size-6" />
           {assessment && (
             <span className="absolute -top-1 -right-1 size-4 rounded-full bg-rose-500 border-2 border-background" />
           )}
@@ -163,12 +162,12 @@ export function FloatingChatbot({ customer, drinks, hoursElapsed, assessment }: 
 
       {/* Chat Panel */}
       {isOpen && (
-        <div className="fixed inset-x-0 bottom-16 z-[95] px-2 sm:inset-x-auto sm:bottom-24 sm:right-4 sm:px-0 sm:w-[calc(100vw-2rem)] sm:max-w-sm">
+        <div className="fixed inset-x-0 bottom-16 z-[95] px-2 sm:inset-x-auto sm:bottom-24 sm:right-4 sm:px-0 sm:w-[360px]">
           <div className="flex flex-col rounded-2xl border bg-background shadow-2xl overflow-hidden" style={{ maxHeight: '55dvh' }}>
             {/* Header */}
             <div className="flex items-center gap-3 border-b px-4 py-3">
-              <div className="flex size-8 items-center justify-center rounded-full bg-primary/10">
-                <Wind className="size-4 text-primary" />
+              <div className="flex size-9 items-center justify-center rounded-xl bg-primary/10">
+                <Sparkles className="size-4 text-primary" />
               </div>
               <div className="flex-1 min-w-0">
                 <h3 className="text-sm font-semibold">Breathy AI</h3>
@@ -178,9 +177,9 @@ export function FloatingChatbot({ customer, drinks, hoursElapsed, assessment }: 
               </div>
               <button
                 onClick={() => setIsOpen(false)}
-                className="p-1 rounded-full hover:bg-muted"
+                className="p-1.5 rounded-full hover:bg-muted transition-colors"
               >
-                <X className="size-4 text-muted-foreground" />
+                <ChevronDown className="size-4 text-muted-foreground" />
               </button>
             </div>
 
@@ -188,16 +187,19 @@ export function FloatingChatbot({ customer, drinks, hoursElapsed, assessment }: 
             <div ref={scrollRef} className="flex-1 overflow-y-auto px-3 py-3 space-y-2.5 min-h-[200px]">
               {messages.length === 0 && (
                 <div className="flex flex-col items-center justify-center py-8 text-center">
-                  <Wind className="size-10 text-muted-foreground/20 mb-2" />
-                  <p className="text-sm text-muted-foreground">Ask me anything about your session</p>
+                  <div className="flex size-14 items-center justify-center rounded-2xl bg-primary/10 mb-3">
+                    <Sparkles className="size-7 text-primary" />
+                  </div>
+                  <p className="text-sm font-medium">Hey {customer.name.split(' ')[0]}!</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">Ask me anything about your session</p>
                 </div>
               )}
 
               {messages.map((msg, i) => (
                 <div key={i} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                   {msg.role === 'assistant' && (
-                    <div className="flex size-5 shrink-0 items-center justify-center rounded-full bg-primary/10 mr-1 mt-1">
-                      <Wind className="size-2.5 text-primary" />
+                    <div className="flex size-6 shrink-0 items-center justify-center rounded-lg bg-primary/10 mr-1.5 mt-1">
+                      <Sparkles className="size-3 text-primary" />
                     </div>
                   )}
                   <div
@@ -214,8 +216,8 @@ export function FloatingChatbot({ customer, drinks, hoursElapsed, assessment }: 
 
               {loading && (
                 <div className="flex justify-start">
-                  <div className="flex size-5 shrink-0 items-center justify-center rounded-full bg-primary/10 mr-1 mt-1">
-                    <Wind className="size-2.5 text-primary" />
+                  <div className="flex size-6 shrink-0 items-center justify-center rounded-lg bg-primary/10 mr-1.5 mt-1">
+                    <Sparkles className="size-3 text-primary" />
                   </div>
                   <div className="bg-muted rounded-2xl rounded-bl-md px-3 py-2.5">
                     <div className="flex gap-1">
@@ -248,7 +250,7 @@ export function FloatingChatbot({ customer, drinks, hoursElapsed, assessment }: 
             </div>
 
             {/* Input */}
-            <div className="border-t px-3 py-2">
+            <div className="border-t px-3 py-2.5">
               <div className="flex items-center gap-2">
                 <input
                   ref={inputRef}
@@ -258,14 +260,14 @@ export function FloatingChatbot({ customer, drinks, hoursElapsed, assessment }: 
                   onKeyDown={handleKeyDown}
                   placeholder="Ask Breathy anything…"
                   disabled={loading}
-                  className="flex-1 rounded-full border bg-muted/50 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary/50 disabled:opacity-50"
+                  className="flex-1 rounded-full border bg-muted/50 px-3.5 py-2.5 text-sm outline-none focus:ring-2 focus:ring-primary/50 disabled:opacity-50"
                 />
                 <button
                   onClick={handleSend}
                   disabled={!input.trim() || loading}
-                  className="flex size-8 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground disabled:opacity-50 transition-opacity"
+                  className="flex size-10 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground disabled:opacity-50 transition-opacity"
                 >
-                  {loading ? <Loader2 className="size-3.5 animate-spin" /> : <Send className="size-3.5" />}
+                  {loading ? <Loader2 className="size-4 animate-spin" /> : <Send className="size-4" />}
                 </button>
               </div>
             </div>

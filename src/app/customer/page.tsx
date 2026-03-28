@@ -16,7 +16,7 @@ import { ImpairmentResult, RiskAssessment, DEFAULT_USER_PROFILE } from '@/lib/im
 import { Customer, Session, Drink } from '@/lib/types';
 import { DRINK_MENU } from '@/lib/menu';
 import {
-  Wine, Activity, User, LogOut, AlertTriangle,
+  Wine, Activity, User, LogOut, AlertTriangle, QrCode, Scale, Users, Phone, GlassWater, Clock, Home, Info,
 } from 'lucide-react';
 import { ImpairmentCheckModal } from '@/components/customer/impairment-check-modal';
 import { ResultsDashboard } from '@/components/customer/results-dashboard';
@@ -500,40 +500,65 @@ function CustomerPageContent() {
                 muted
                 autoPlay
               />
+              {/* Scan frame corners */}
+              <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                <div className="relative size-56">
+                  <div className="absolute top-0 left-0 w-8 h-8 border-t-3 border-l-3 border-white rounded-tl-lg" />
+                  <div className="absolute top-0 right-0 w-8 h-8 border-t-3 border-r-3 border-white rounded-tr-lg" />
+                  <div className="absolute bottom-0 left-0 w-8 h-8 border-b-3 border-l-3 border-white rounded-bl-lg" />
+                  <div className="absolute bottom-0 right-0 w-8 h-8 border-b-3 border-r-3 border-white rounded-br-lg" />
+                  {/* Animated scanning line */}
+                  <div className="absolute inset-x-2 h-0.5 bg-primary/80 animate-[scan_2s_ease-in-out_infinite]" style={{ animation: 'scan 2s ease-in-out infinite' }} />
+                </div>
+              </div>
+              <style>{`@keyframes scan { 0%, 100% { top: 10%; } 50% { top: 85%; } }`}</style>
             </div>
-            <div className="p-4 bg-black/80 flex gap-2">
-              <Button onClick={() => setShowScanner(false)} variant="outline" className="flex-1">
+            <div className="p-4 bg-black/80 flex flex-col items-center gap-3">
+              <p className="text-white/70 text-sm text-center">Point camera at the QR code on your table</p>
+              <Button onClick={() => setShowScanner(false)} variant="outline" className="w-full max-w-xs h-12 rounded-xl">
                 Cancel
               </Button>
             </div>
           </div>
         )}
-      <main className="flex min-h-[100dvh] w-full flex-col items-center justify-start bg-background px-3 py-4 pt-[env(safe-area-inset-top,16px)] sm:justify-center sm:px-6 sm:py-8 overflow-y-auto">
-        <div className="w-full max-w-md space-y-4 text-center sm:space-y-8">
-          <div className="space-y-2">
-            <div className="mx-auto flex size-16 items-center justify-center rounded-full bg-primary/10 sm:size-20">
-              <Wine className="size-8 text-primary sm:size-10" />
-            </div>
-            <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">Woozy</h1>
-            <p className="text-muted-foreground">Your personal drinking companion</p>
+      {/* Sticky header */}
+      <header className="sticky top-0 z-40 bg-background/80 backdrop-blur-md border-b px-4 py-3">
+        <div className="mx-auto max-w-md flex items-center gap-3">
+          <div className="flex size-9 items-center justify-center rounded-xl bg-primary/10">
+            <Wine className="size-5 text-primary" />
+          </div>
+          <h1 className="text-lg font-bold tracking-tight">Woozy</h1>
+        </div>
+      </header>
+      <main className="flex min-h-[calc(100dvh-57px)] w-full flex-col items-center justify-start bg-background px-4 py-6 sm:justify-center sm:px-6 sm:py-8 overflow-y-auto">
+        <div className="w-full max-w-md space-y-6">
+          <div className="text-center space-y-1">
+            <h2 className="text-2xl font-bold tracking-tight">Welcome Back</h2>
+            <p className="text-sm text-muted-foreground">Fill in your details to get started</p>
           </div>
 
-          <Card className="border-none shadow-lg text-left">
-            <CardContent className="pt-4 px-4 space-y-3 sm:pt-6 sm:px-6 sm:space-y-4">
+          <Card className="border-none shadow-lg">
+            <CardContent className="pt-5 px-4 space-y-4 sm:pt-6 sm:px-6 sm:space-y-5">
               {/* Name */}
               <div className="space-y-1.5">
-                <label className="text-sm font-medium">Your Name</label>
+                <label className="text-sm font-medium flex items-center gap-2">
+                  <User className="size-3.5 text-muted-foreground" />
+                  Your Name
+                </label>
                 <input
                   type="text"
                   value={customerName}
                   onChange={(e) => setCustomerName(e.target.value)}
                   placeholder="e.g. Alex"
-                  className="w-full rounded-lg border bg-background px-3 py-2.5 text-base sm:px-4 sm:py-3 sm:text-sm outline-none focus:ring-2 focus:ring-primary/50"
+                  className="w-full rounded-xl border bg-background px-4 py-3 h-12 text-base outline-none focus:ring-2 focus:ring-primary/50 transition-shadow"
                 />
               </div>
               {/* Weight */}
               <div className="space-y-1.5">
-                <label className="text-sm font-medium">Weight (lbs)</label>
+                <label className="text-sm font-medium flex items-center gap-2">
+                  <Scale className="size-3.5 text-muted-foreground" />
+                  Weight (lbs)
+                </label>
                 <input
                   type="number"
                   inputMode="numeric"
@@ -541,38 +566,48 @@ function CustomerPageContent() {
                   onChange={(e) => setWeightLbs(Number(e.target.value))}
                   min={60}
                   max={600}
-                  className="w-full rounded-lg border bg-background px-3 py-2.5 text-base sm:px-4 sm:py-3 sm:text-sm outline-none focus:ring-2 focus:ring-primary/50"
+                  className="w-full rounded-xl border bg-background px-4 py-3 h-12 text-base outline-none focus:ring-2 focus:ring-primary/50 transition-shadow"
                 />
               </div>
               {/* Gender */}
               <div className="space-y-1.5">
-                <label className="text-sm font-medium">Gender</label>
+                <label className="text-sm font-medium flex items-center gap-2">
+                  <Users className="size-3.5 text-muted-foreground" />
+                  Gender
+                </label>
                 <div className="grid grid-cols-2 gap-2">
-                  <button
+                  <Button
+                    type="button"
+                    variant={gender === 'male' ? 'default' : 'outline'}
                     onClick={() => setGender('male')}
-                    className={`rounded-lg border px-4 py-2.5 text-sm font-medium transition-colors active:scale-95 ${gender === 'male' ? 'border-primary bg-primary/10 text-primary' : 'hover:bg-muted'}`}
+                    className="h-12 rounded-xl text-sm font-medium"
                   >
                     Male
-                  </button>
-                  <button
+                  </Button>
+                  <Button
+                    type="button"
+                    variant={gender === 'female' ? 'default' : 'outline'}
                     onClick={() => setGender('female')}
-                    className={`rounded-lg border px-4 py-2.5 text-sm font-medium transition-colors active:scale-95 ${gender === 'female' ? 'border-primary bg-primary/10 text-primary' : 'hover:bg-muted'}`}
+                    className="h-12 rounded-xl text-sm font-medium"
                   >
                     Female
-                  </button>
+                  </Button>
                 </div>
               </div>
               {/* Trusted Friend Phone */}
               <div className="space-y-1.5">
-                <label className="text-sm font-medium">Trusted Friend&apos;s Phone</label>
+                <label className="text-sm font-medium flex items-center gap-2">
+                  <Phone className="size-3.5 text-muted-foreground" />
+                  Trusted Friend&apos;s Phone
+                </label>
                 <input
                   type="tel"
                   value={emergencyPhone}
                   onChange={(e) => setEmergencyPhone(e.target.value)}
                   placeholder="e.g. +1 555-123-4567"
-                  className="w-full rounded-lg border bg-background px-3 py-2.5 text-base sm:px-4 sm:py-3 sm:text-sm outline-none focus:ring-2 focus:ring-primary/50"
+                  className="w-full rounded-xl border bg-background px-4 py-3 h-12 text-base outline-none focus:ring-2 focus:ring-primary/50 transition-shadow"
                 />
-                <p className="text-[11px] sm:text-xs text-muted-foreground">
+                <p className="text-[11px] text-muted-foreground leading-relaxed">
                   We&apos;ll text them if you reach a high risk level or when your session ends so they can make sure you get home safe.
                 </p>
               </div>
@@ -580,9 +615,10 @@ function CustomerPageContent() {
               <Button
                 onClick={() => setShowScanner(true)}
                 size="lg"
-                className="w-full rounded-full text-base h-12 sm:h-14 mt-2 active:scale-[0.98] transition-transform"
+                className="w-full rounded-xl text-base h-14 mt-2 gap-2 active:scale-[0.98] transition-transform"
                 disabled={!customerName.trim() || loading}
               >
+                <QrCode className="size-5" />
                 {loading ? 'Starting…' : 'Scan QR to Join'}
               </Button>
             </CardContent>
@@ -603,65 +639,101 @@ function CustomerPageContent() {
 
         {/* Header */}
         <header className="flex items-center justify-between px-1 sm:px-2">
-          <div>
-            <p className="text-xs font-medium text-muted-foreground sm:text-sm">
-              Hi, {customer?.name.split(' ')[0]}
-            </p>
-            <h1 className="text-xl font-bold tracking-tight sm:text-2xl">Your Session</h1>
+          <div className="flex items-center gap-3">
+            <div className="flex size-9 items-center justify-center rounded-xl bg-primary/10">
+              <Wine className="size-5 text-primary" />
+            </div>
+            <div>
+              <h1 className="text-lg font-bold tracking-tight">Active Session</h1>
+              <p className="text-xs text-muted-foreground">
+                Hi, {customer?.name.split(' ')[0]}
+              </p>
+            </div>
           </div>
-          <div className="flex flex-col items-end">
-            <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Session</span>
-            <span className="font-mono text-[10px] font-bold bg-background px-2 py-1 rounded-md border shadow-sm">
-              {session.id.slice(0, 8).toUpperCase()}
+          <div className="flex items-center gap-1.5 text-muted-foreground">
+            <Clock className="size-3.5" />
+            <span className="text-sm font-medium tabular-nums">
+              {Math.floor(hoursElapsed)}:{String(Math.floor((hoursElapsed % 1) * 60)).padStart(2, '0')}
             </span>
           </div>
         </header>
 
         {activeTab === 'home' && (
-          <div className="space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
-            {/* BAC Card */}
+          <div className="space-y-3 animate-in fade-in slide-in-from-bottom-4 duration-500">
+            {/* BAC Hero Card */}
             <Card className={`overflow-hidden shadow-md ${overLimit ? 'border-destructive' : 'border-none'}`}>
-              <CardContent className="p-4 sm:p-6">
-                <div className="flex flex-col items-center justify-center space-y-2">
-                  <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider sm:text-sm">Estimated BAC Range</span>
-                  <span className={`text-2xl font-black tracking-tighter tabular-nums sm:text-4xl ${overLimit ? 'text-destructive' : ''}`}>
+              <CardContent className="p-5 sm:p-6">
+                <div className="flex items-start justify-between mb-3">
+                  <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Estimated BAC</span>
+                  <span className={`text-[10px] font-semibold px-2.5 py-1 rounded-full ${
+                    overLimit ? 'bg-destructive/10 text-destructive' : bac >= 0.05 ? 'bg-amber-500/10 text-amber-600' : 'bg-emerald-500/10 text-emerald-600'
+                  }`}>
+                    {overLimit ? 'Over Limit' : bac >= 0.05 ? 'Elevated' : 'Safe'}
+                  </span>
+                </div>
+                <div className="text-center mb-4">
+                  <span className={`text-3xl font-black tracking-tighter tabular-nums sm:text-4xl ${overLimit ? 'text-destructive' : ''}`}>
                     {formatBACRange(bacRange)}
                   </span>
-                  <span className="text-xs text-muted-foreground">Range accounts for absorption variance</span>
+                  <p className="text-[10px] text-muted-foreground mt-1">Range accounts for absorption variance</p>
                 </div>
 
-                <div className="mt-5 sm:mt-8 space-y-2">
-                  <div className="flex justify-between text-xs font-medium text-muted-foreground">
-                    <span>0.00%</span>
-                    <span>0.08% (Legal Limit)</span>
+                <div className="space-y-1.5">
+                  <div className="relative">
+                    <Progress
+                      value={bacPercent}
+                      className={`h-3 rounded-full ${overLimit ? '[&>[data-slot=indicator]]:bg-destructive' : bac >= 0.05 ? '[&>[data-slot=indicator]]:bg-amber-500' : '[&>[data-slot=indicator]]:bg-emerald-500'}`}
+                    />
+                    {/* Legal limit marker */}
+                    <div className="absolute top-0 bottom-0 flex flex-col items-center" style={{ left: '100%', transform: 'translateX(-1px)' }}>
+                      <div className="w-px h-3 bg-destructive/50" />
+                    </div>
                   </div>
-                  <Progress
-                    value={bacPercent}
-                    className={`h-3 ${overLimit ? '[&>[data-slot=indicator]]:bg-destructive' : ''}`}
-                  />
+                  <div className="flex justify-between text-[10px] text-muted-foreground">
+                    <span>0.00%</span>
+                    <span className="text-destructive/70 font-medium">0.08% limit</span>
+                  </div>
                 </div>
               </CardContent>
             </Card>
 
             {/* Quick Stats Grid */}
-            <div className="grid grid-cols-2 gap-2.5 sm:gap-4">
+            <div className="grid grid-cols-2 gap-2.5">
               <Card className="border-none shadow-sm">
-                <CardContent className="flex flex-col items-center justify-center p-3 sm:p-6">
-                  <span className="text-[10px] font-medium text-muted-foreground mb-0.5 sm:text-sm sm:mb-1">Drinks</span>
-                  <span className="text-2xl font-bold text-primary sm:text-4xl">{drinks.length}</span>
+                <CardContent className="flex items-center gap-3 p-4">
+                  <div className="flex size-10 items-center justify-center rounded-xl bg-primary/10">
+                    <GlassWater className="size-5 text-primary" />
+                  </div>
+                  <div>
+                    <span className="text-[10px] font-medium text-muted-foreground">Drinks</span>
+                    <p className="text-xl font-bold text-primary">{drinks.length}</p>
+                  </div>
                 </CardContent>
               </Card>
               <Card className="border-none shadow-sm">
-                <CardContent className="flex flex-col items-center justify-center p-3 sm:p-6">
-                  <span className="text-[10px] font-medium text-muted-foreground mb-0.5 sm:text-sm sm:mb-1">Hours</span>
-                  <span className="text-2xl font-bold sm:text-4xl">{hoursElapsed.toFixed(1)}</span>
+                <CardContent className="flex items-center gap-3 p-4">
+                  <div className="flex size-10 items-center justify-center rounded-xl bg-muted">
+                    <Clock className="size-5 text-muted-foreground" />
+                  </div>
+                  <div>
+                    <span className="text-[10px] font-medium text-muted-foreground">Elapsed</span>
+                    <p className="text-xl font-bold tabular-nums">{Math.floor(hoursElapsed)}:{String(Math.floor((hoursElapsed % 1) * 60)).padStart(2, '0')}</p>
+                  </div>
                 </CardContent>
               </Card>
             </div>
 
-            <p className="text-center text-xs text-muted-foreground pt-2">
-              Your bartender will add drinks to your session in real time.
-            </p>
+            {/* Pace Warning */}
+            {drinks.length > 0 && (drinks.length / Math.max(hoursElapsed, 0.1)) > 2 && (
+              <Card className="border-amber-500/30 bg-amber-500/5 shadow-sm">
+                <CardContent className="flex items-center gap-3 p-3.5">
+                  <AlertTriangle className="size-5 text-amber-500 shrink-0" />
+                  <p className="text-sm font-medium text-amber-700">
+                    You&apos;re pacing at {(drinks.length / Math.max(hoursElapsed, 0.1)).toFixed(1)} drinks/hr — consider slowing down.
+                  </p>
+                </CardContent>
+              </Card>
+            )}
 
             {/* Predictive Alert */}
             {prediction >= 0 && (
@@ -672,18 +744,28 @@ function CustomerPageContent() {
                 </CardContent>
               </Card>
             )}
+
+            {/* Info note */}
+            <div className="flex items-start gap-2.5 px-2 py-2">
+              <Info className="size-4 text-muted-foreground/60 shrink-0 mt-0.5" />
+              <p className="text-xs text-muted-foreground leading-relaxed">
+                Your bartender will add drinks to your session in real time. BAC estimates update automatically.
+              </p>
+            </div>
           </div>
         )}
 
         {activeTab === 'drinks' && (
-          <div className="space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
-            <h2 className="px-2 text-lg font-semibold">Drink History</h2>
-            <Card className="border-none shadow-sm">
+          <div className="space-y-3 animate-in fade-in slide-in-from-bottom-4 duration-500">
+            <h2 className="px-1 text-lg font-bold">Drink History</h2>
+            <Card className="border-none shadow-sm overflow-hidden">
               <CardContent className="p-0">
                 {drinks.length === 0 ? (
                   <div className="flex flex-col items-center justify-center py-12 text-center">
-                    <Wine className="size-12 text-muted-foreground/20 mb-4" />
-                    <p className="text-muted-foreground">No drinks recorded yet.</p>
+                    <div className="flex size-16 items-center justify-center rounded-full bg-muted mb-4">
+                      <GlassWater className="size-8 text-muted-foreground/30" />
+                    </div>
+                    <p className="text-sm font-medium text-muted-foreground">No drinks recorded yet</p>
                     <p className="text-xs text-muted-foreground mt-1">Your bartender will add them here.</p>
                   </div>
                 ) : (
@@ -693,17 +775,17 @@ function CustomerPageContent() {
                       return (
                         <div key={drink.id} className="flex items-center justify-between p-4">
                           <div className="flex items-center gap-3">
-                            <div className="flex size-10 items-center justify-center rounded-full bg-primary/10 text-xs font-bold text-primary">
+                            <div className="flex size-10 items-center justify-center rounded-xl bg-primary/10 text-xs font-bold text-primary">
                               {menuItem ? `${menuItem.standard_drinks}x` : '1x'}
                             </div>
                             <div>
-                              <p className="font-medium">{drink.name}</p>
+                              <p className="font-medium text-sm">{drink.name}</p>
                               <p className="text-xs text-muted-foreground">
                                 {drink.volume_ml}ml · {drink.abv}% ABV
                               </p>
                             </div>
                           </div>
-                          <span className="text-xs font-medium text-muted-foreground">
+                          <span className="text-xs font-medium text-muted-foreground tabular-nums">
                             {new Date(drink.ordered_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                           </span>
                         </div>
@@ -717,31 +799,46 @@ function CustomerPageContent() {
         )}
 
         {activeTab === 'profile' && (
-          <div className="space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
-            <h2 className="px-2 text-lg font-semibold">Settings & Info</h2>
-            <Card className="border-none shadow-sm">
+          <div className="space-y-3 animate-in fade-in slide-in-from-bottom-4 duration-500">
+            <h2 className="px-1 text-lg font-bold">Settings & Info</h2>
+            <Card className="border-none shadow-sm overflow-hidden">
               <CardContent className="p-0 divide-y">
                 <div className="flex items-center justify-between p-4">
-                  <span className="font-medium">Name</span>
-                  <span className="text-muted-foreground">{customer?.name}</span>
+                  <div className="flex items-center gap-2.5">
+                    <User className="size-4 text-muted-foreground" />
+                    <span className="font-medium text-sm">Name</span>
+                  </div>
+                  <span className="text-sm text-muted-foreground">{customer?.name}</span>
                 </div>
                 <div className="flex items-center justify-between p-4">
-                  <span className="font-medium">Body Weight</span>
-                  <span className="text-muted-foreground">{customer?.weight_lbs} lbs</span>
+                  <div className="flex items-center gap-2.5">
+                    <Scale className="size-4 text-muted-foreground" />
+                    <span className="font-medium text-sm">Body Weight</span>
+                  </div>
+                  <span className="text-sm text-muted-foreground">{customer?.weight_lbs} lbs</span>
                 </div>
                 <div className="flex items-center justify-between p-4">
-                  <span className="font-medium">Gender</span>
-                  <span className="text-muted-foreground capitalize">{customer?.gender}</span>
+                  <div className="flex items-center gap-2.5">
+                    <Users className="size-4 text-muted-foreground" />
+                    <span className="font-medium text-sm">Gender</span>
+                  </div>
+                  <span className="text-sm text-muted-foreground capitalize">{customer?.gender}</span>
                 </div>
                 <div className="flex items-center justify-between p-4">
-                  <span className="font-medium">Trusted Friend</span>
-                  <span className="text-muted-foreground">
+                  <div className="flex items-center gap-2.5">
+                    <Phone className="size-4 text-muted-foreground" />
+                    <span className="font-medium text-sm">Trusted Friend</span>
+                  </div>
+                  <span className="text-sm text-muted-foreground">
                     {customer?.emergency_phone || 'Not set'}
                   </span>
                 </div>
                 <div className="flex items-center justify-between p-4">
-                  <span className="font-medium">Pacing</span>
-                  <span className="text-muted-foreground">
+                  <div className="flex items-center gap-2.5">
+                    <Activity className="size-4 text-muted-foreground" />
+                    <span className="font-medium text-sm">Pacing</span>
+                  </div>
+                  <span className="text-sm text-muted-foreground tabular-nums">
                     {(drinks.length / Math.max(hoursElapsed, 0.1)).toFixed(1)} drinks/hr
                   </span>
                 </div>
@@ -750,13 +847,13 @@ function CustomerPageContent() {
 
             <Button
               variant="destructive"
-              className="w-full mt-8 h-14 rounded-xl"
+              className="w-full mt-6 h-14 rounded-xl"
               onClick={requestEndSession}
             >
               <LogOut className="mr-2 size-5" />
               End Session
             </Button>
-            <p className="text-center text-xs text-muted-foreground mt-4">
+            <p className="text-center text-xs text-muted-foreground mt-3">
               Please arrange safe transportation when done.
             </p>
           </div>
@@ -839,23 +936,23 @@ function CustomerPageContent() {
         <div className="mx-auto flex max-w-md items-center justify-around p-1.5 sm:p-2">
           <button
             onClick={() => setActiveTab('home')}
-            className={`flex flex-col items-center justify-center w-16 h-12 rounded-xl transition-colors sm:h-14 ${activeTab === 'home' ? 'text-primary' : 'text-muted-foreground hover:bg-muted'}`}
+            className={`flex flex-col items-center justify-center px-6 py-2 rounded-xl transition-colors ${activeTab === 'home' ? 'text-primary bg-primary/10' : 'text-muted-foreground hover:bg-muted'}`}
           >
-            <Activity className="size-5 mb-0.5 sm:size-6 sm:mb-1" />
-            <span className="text-[10px] font-medium">Status</span>
+            <Home className="size-5 mb-0.5" />
+            <span className="text-[10px] font-medium">Home</span>
           </button>
           <button
             onClick={() => setActiveTab('drinks')}
-            className={`flex flex-col items-center justify-center w-16 h-12 rounded-xl transition-colors sm:h-14 ${activeTab === 'drinks' ? 'text-primary' : 'text-muted-foreground hover:bg-muted'}`}
+            className={`flex flex-col items-center justify-center px-6 py-2 rounded-xl transition-colors ${activeTab === 'drinks' ? 'text-primary bg-primary/10' : 'text-muted-foreground hover:bg-muted'}`}
           >
-            <Wine className="size-5 mb-0.5 sm:size-6 sm:mb-1" />
+            <GlassWater className="size-5 mb-0.5" />
             <span className="text-[10px] font-medium">Drinks</span>
           </button>
           <button
             onClick={() => setActiveTab('profile')}
-            className={`flex flex-col items-center justify-center w-16 h-12 rounded-xl transition-colors sm:h-14 ${activeTab === 'profile' ? 'text-primary' : 'text-muted-foreground hover:bg-muted'}`}
+            className={`flex flex-col items-center justify-center px-6 py-2 rounded-xl transition-colors ${activeTab === 'profile' ? 'text-primary bg-primary/10' : 'text-muted-foreground hover:bg-muted'}`}
           >
-            <User className="size-5 mb-0.5 sm:size-6 sm:mb-1" />
+            <User className="size-5 mb-0.5" />
             <span className="text-[10px] font-medium">Profile</span>
           </button>
         </div>

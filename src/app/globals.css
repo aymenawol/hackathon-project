@@ -84,9 +84,9 @@
 
 /* Purple theme for customer-facing pages */
 .customer-theme {
-  --primary: oklch(0.546 0.245 275);
+  --primary: oklch(0.55 0.18 285);
   --primary-foreground: oklch(1 0 0);
-  --ring: oklch(0.546 0.245 275);
+  --ring: oklch(0.55 0.18 285);
 }
 
 .dark {
