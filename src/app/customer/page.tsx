@@ -526,7 +526,7 @@ function CustomerPageContent() {
       {/* Sticky header */}
       <header className="sticky top-0 z-40 bg-background/80 backdrop-blur-md border-b px-4 py-3">
         <div className="mx-auto max-w-md flex items-center gap-3">
-          <Image src="/logo.png" alt="Woozy" width={40} height={40} className="h-8 w-auto object-contain" />
+          <Image src="/logo1.png" alt="Woozy" width={40} height={40} className="h-8 w-auto object-contain" />
           <div className="flex-1" />
           <ThemeToggle />
         </div>
@@ -641,7 +641,7 @@ function CustomerPageContent() {
         {/* Header */}
         <header className="flex items-center justify-between px-1 sm:px-2">
           <div className="flex items-center gap-3">
-            <Image src="/logo.png" alt="Woozy" width={40} height={40} className="h-8 w-auto object-contain" />
+            <Image src="/logo1.png" alt="Woozy" width={40} height={40} className="h-8 w-auto object-contain" />
             <div>
               <h1 className="text-lg font-bold tracking-tight">Active Session</h1>
               <p className="text-xs text-muted-foreground">

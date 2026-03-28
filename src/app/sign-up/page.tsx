@@ -73,7 +73,7 @@ function SignUpPageContent() {
       </div>
       <div className="w-full max-w-sm space-y-8 text-center">
         <div className="space-y-3">
-          <Image src="/logo.png" alt="Woozy" width={120} height={120} className="mx-auto size-24 object-contain" />
+          <Image src="/logo1.png" alt="Woozy" width={120} height={120} className="mx-auto size-24 object-contain" />
           <p className="text-sm text-muted-foreground">Your personal drinking companion</p>
         </div>
 
